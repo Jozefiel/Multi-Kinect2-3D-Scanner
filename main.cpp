@@ -7,7 +7,7 @@
 #include <opencv2/opencv.hpp>
 
 using namespace std;
-uint id1=0, id2=1, id3=2;
+unsigned int id1=0, id2=1, id3=2;
 
 
 int main()
@@ -60,21 +60,44 @@ int main()
     while(1)
     {
 
-        std::thread t1(&Kinect::frames,&kinect0,pListener0);
+     //   cv::Mat depth=cv::Mat::zeros(424, 512, CV_32FC1);
+        cv::Mat * depthmap0 = new cv::Mat( cv::Mat::zeros(424, 512, CV_32FC1) );
+        cv::Mat * depthmap1 = new cv::Mat( cv::Mat::zeros(424, 512, CV_32FC1) );
+
+        cv::Mat * depthmap2 = new cv::Mat( cv::Mat::zeros(424, 512, CV_32FC1) );
+
+       // depthmap0 = &depth;
+
+        std::thread t1(&Kinect::frames,&kinect0, depthmap0);
+        std::thread t2(&Kinect::frames,&kinect1, depthmap1);
+        std::thread t3(&Kinect::frames,&kinect2, depthmap2);
+
+        t3.join();
         t1.join();
-        std::thread t2(&Kinect::frames,&kinect1,pListener1);
-          t2.join();
-        std::thread t3(&Kinect::frames,&kinect2,pListener2);
-          t3.join();
+        t2.join();
 
-//        kinect0.frames(pListener0);
-//        kinect1.frames(pListener1);
-//        kinect2.frames(pListener2);
+        std::stringstream serial_string0;
+        serial_string0 << kinect0.getSerial();
+        cv::imshow(serial_string0.str(), *depthmap0 / 2048);
 
-    //    pListener2->release(kinect2.frame);
+        std::stringstream serial_string1;
+        serial_string1 << kinect1.getSerial();
+        cv::imshow(serial_string1.str(),* depthmap1 / 2048);
 
+        std::stringstream serial_string2;
+        serial_string2 << kinect2.getSerial();
+        cv::imshow(serial_string2.str(),*depthmap2 / 2048);
 
         cv::waitKey(10);
+
+        //delete depthmap0, depthmap1, depthmap2;
+
+ //       kinect0.frames(depthmap0);
+//        kinect1.frames();
+//        kinect2.frames();
+
+
+    //    pListener2->release(kinect2.frame);
 
         //        kinects[0];
 //        kinects[1];

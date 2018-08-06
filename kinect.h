@@ -18,19 +18,21 @@
 class Kinect
 {
 public:
-    Kinect(int id, libfreenect2::Freenect2 *freenect2, libfreenect2::PacketPipeline *pipeline, libfreenect2::SyncMultiFrameListener *pListener);
+    Kinect(unsigned int id, libfreenect2::Freenect2 *freenect2, libfreenect2::PacketPipeline *pipeline, libfreenect2::SyncMultiFrameListener *pListener);
     ~Kinect();
     void start();
     void registration();
     void newFrames();
-    void frames(libfreenect2::SyncMultiFrameListener * pListener);
+    void frames(cv::Mat * depth_map);
     void getDepth();
-    libfreenect2::SyncMultiFrameListener *listener;
-   //
+    std::string getSerial();
 
 private:
     std::string serial;
     libfreenect2::Freenect2Device *dev = nullptr;
     libfreenect2::Registration * registrated = nullptr;
+    unsigned int kinect_id;
+    libfreenect2::SyncMultiFrameListener *listener;
+
 };
 #endif // KINECT_H
