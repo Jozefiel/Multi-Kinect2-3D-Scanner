@@ -1,11 +1,12 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.5)
 
 project(3DScan)
 
-find_package(PCL 1.8 REQUIRED COMPONENTS common io visualization)
+find_package(PCL 1.8 REQUIRED )
 find_package(OpenCV REQUIRED )
 find_package(freenect2 REQUIRED )
-find_package( Threads )
+find_package(VTK REQUIRED )
+find_package(Threads )
 
 include_directories("/usr/include/libusb-1.0/")
 
@@ -13,7 +14,8 @@ include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
-add_executable(test3 main.cpp kinect.cpp)
+add_executable(test3 main.cpp kinect.cpp pcl.cpp)
+
 target_link_libraries(test3 ${PCL_LIBRARIES} ${PCL_FILTERS_LIBRARIES} ${OpenCV_LIBRARIES} ${freenect2_LIBRARY} ${CMAKE_THREAD_LIBS_INIT} )
 
 FIND_LIBRARY(freenect2_LIBRARY freenect2
@@ -27,7 +29,9 @@ FIND_PATH(freenect2_INCLUDE_DIR @PROJECT_NAME@/libfreenect2.hpp
 )
 SET(freenect2_INCLUDE_DIRS ${freenect2_INCLUDE_DIR})
 
+
 #${freenect2_LIBS}
 
-#SET(COMPILE_FLAGS "-std=c++11")
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 

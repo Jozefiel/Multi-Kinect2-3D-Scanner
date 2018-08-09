@@ -1,12 +1,5 @@
 #include "kinect.h"
 
-#define camAttachTime 1000
-#define ir_depth_width 512
-#define ir_depth_height 424
-#define ir_depth_bpp 4
-#define color_width 1920
-#define color_height 1080+2
-#define color_bpp 4
 
 Kinect::Kinect(int id, libfreenect2::Freenect2 *freenect2, libfreenect2::PacketPipeline *pipeline)
 {
@@ -59,10 +52,6 @@ void Kinect::frames()
         cv::Mat(ir->height, ir->width, CV_32FC1, ir->data).copyTo(*irMat);
         cv::Mat(rgb->height, rgb->width, CV_8UC4, rgb->data).copyTo(*colorMat);
 
-        libfreenect2::Frame *undistorted = new libfreenect2::Frame(ir_depth_width, ir_depth_height, ir_depth_bpp);
-        libfreenect2::Frame *registered = new libfreenect2::Frame(ir_depth_width, ir_depth_height, ir_depth_bpp);
-        libfreenect2::Frame *depth2rgb = new libfreenect2::Frame(color_width,color_height, color_bpp);
-
         registrated->apply(rgb,depth,undistorted,registered,true,depth2rgb);
         cv::Mat(registered->height, registered->width, CV_8UC4, registered->data).copyTo(*rgbdMat);
 
@@ -75,12 +64,17 @@ std::string Kinect::getSerial()
     return _serial;
 }
 
-std::string Kinect::getId()
+std::string Kinect::getIdString()
 {
     std::stringstream id_string;
     id_string << kinect_id;
-
     return id_string.str();
+}
+
+int Kinect::getId()
+{
+    int _kinect_id=kinect_id;
+    return _kinect_id;
 }
 
 
@@ -140,6 +134,7 @@ void Kinect::depthControl()
 
 void Kinect::cloudInit()
 {
+    cloud->clear();
     cloud->width = static_cast<uint32_t>(ir_depth_width);
     cloud->height = static_cast<uint32_t>(ir_depth_height);
     cloud->is_dense = false;
@@ -148,15 +143,57 @@ void Kinect::cloudInit()
 
 void Kinect::cloudData()
 {
+
+    cloudInit();
+    float x=0, y=0, z=0;
+    unsigned long n=0;
     for(int x_side=0;x_side<ir_depth_width;x_side++)
     {
         for(int y_side=0;y_side<ir_depth_height;y_side++)
         {
             float rgb;
-            registrated->getPointXYZRGB(r,c,x,y,z,rgb);
-        }
+            registrated->getPointXYZRGB(undistorted,registered,y_side,x_side,x,y,z,rgb);
+            const uint8_t *p = reinterpret_cast<uint8_t*>(&rgb);
+            uint8_t b = p[0];
+            uint8_t g = p[1];
+            uint8_t r = p[2];
 
+            if(std::isnan(x) || std::isinf(x))
+            {
+                x=0;
+            }
+            if(std::isnan(y) || std::isinf(y))
+            {
+                y=0;
+            }
+            if(std::isnan(z) || z>1 || std::isinf(z))
+            {
+                x=0;
+                z=0;
+                y=0;
+            }
+              cloud->points[n].x=x;
+              cloud->points[n].y=y;
+              cloud->points[n].z=z;
+              cloud->points[n].r=r;
+              cloud->points[n].g=g;
+              cloud->points[n].b=b;
+
+              n++;
+        }
     }
+}
+
+pcl::PointCloud<pcl::PointXYZRGB>::Ptr Kinect::getCloudData()
+{
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr tmpCloud (new pcl::PointCloud<pcl::PointXYZRGB>);
+    tmpCloud->width = static_cast<uint32_t>(ir_depth_width);
+    tmpCloud->height = static_cast<uint32_t>(ir_depth_height);
+    tmpCloud->is_dense = false;
+    tmpCloud->points.resize( cloud->width* cloud->height);
+    pcl::copyPointCloud(*cloud,*tmpCloud);
+
+    return tmpCloud;
 }
 
 
