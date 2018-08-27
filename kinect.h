@@ -26,15 +26,21 @@
 #include <iostream>
 #include <stdio.h>
 #include <math.h>
+#include <atomic>
+#include <mutex>
+#include <chrono>
+#include <thread>
 
-
-#define camAttachTime 1000
+#define camAttachTime 2000
 #define ir_depth_width 512
 #define ir_depth_height 424
 #define ir_depth_bpp 4
 #define color_width 1920
 #define color_height 1080+2
 #define color_bpp 4
+
+static std::mutex ui_locker;
+
 
 class Kinect
 {
@@ -45,7 +51,8 @@ public:
     void registration();
 
     void newFrames();
-    void frames();
+//    void frames();
+    void frames(std::atomic<bool> &keep_running);
     void rangedDepth();
     void rangedRGBD();
 
@@ -66,6 +73,8 @@ public:
 
     int getId();
     void depthControl();
+
+    //variables
 
 private:
     std::string serial;
@@ -91,5 +100,8 @@ private:
     int high_slider=65535;
 
     pcl::PointCloud<pcl::PointXYZRGB> *cloud = new pcl::PointCloud<pcl::PointXYZRGB>;
+
+    std::chrono::system_clock::time_point then, now;
+
 };
 #endif // KINECT_H

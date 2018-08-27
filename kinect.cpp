@@ -41,22 +41,74 @@ void Kinect::registration()
 }
 
 
-void Kinect::frames()
+//void Kinect::frames()
+//{
+//    then=std::chrono::system_clock::now();
+
+//    if(listener->waitForNewFrame(frame,camAttachTime))
+//    {
+//        std::cout<<getId()<<" has new frame"<<std::endl;
+
+//        libfreenect2::Frame *depth=frame[libfreenect2::Frame::Depth];
+//        libfreenect2::Frame *ir=frame[libfreenect2::Frame::Ir];
+//        libfreenect2::Frame *rgb=frame[libfreenect2::Frame::Color];
+
+
+//        cv::Mat(depth->height, depth->width, CV_32FC1, depth->data).copyTo(*depthMat);
+//        cv::Mat(ir->height, ir->width, CV_32FC1, ir->data).copyTo(*irMat);
+//        cv::Mat(rgb->height, rgb->width, CV_8UC4, rgb->data).copyTo(*colorMat);
+
+//        registrated->apply(rgb,depth,undistorted,registered,true,depth2rgb);
+//        cv::Mat(registered->height, registered->width, CV_8UC4, registered->data).copyTo(*rgbdMat);
+
+//        listener->release(frame);
+//    }
+//    else
+//    {
+//        std::cout<<getId()<<" hasn't new frame"<<std::endl;
+//    }
+
+//    now=std::chrono::system_clock::now();
+//    std::cout << "FRAMES: "<<getId()<<" "<< std::chrono::duration_cast<std::chrono::milliseconds>(now - then).count() << " ms" << endl;
+
+//}
+
+void Kinect::frames(std::atomic<bool> & keep_running)
 {
-        listener->waitForNewFrame(frame,camAttachTime);
-        libfreenect2::Frame *depth=frame[libfreenect2::Frame::Depth];
-        libfreenect2::Frame *ir=frame[libfreenect2::Frame::Ir];
-        libfreenect2::Frame *rgb=frame[libfreenect2::Frame::Color];
+    while(keep_running)
+    {
+        then=std::chrono::system_clock::now();
 
-        cv::Mat(depth->height, depth->width, CV_32FC1, depth->data).copyTo(*depthMat);
-        cv::Mat(ir->height, ir->width, CV_32FC1, ir->data).copyTo(*irMat);
-        cv::Mat(rgb->height, rgb->width, CV_8UC4, rgb->data).copyTo(*colorMat);
+        if(listener->waitForNewFrame(frame,camAttachTime))
+        {
+            then=std::chrono::system_clock::now();
 
-        registrated->apply(rgb,depth,undistorted,registered,true,depth2rgb);
-        cv::Mat(registered->height, registered->width, CV_8UC4, registered->data).copyTo(*rgbdMat);
+            libfreenect2::Frame *depth=frame[libfreenect2::Frame::Depth];
+            libfreenect2::Frame *ir=frame[libfreenect2::Frame::Ir];
+            libfreenect2::Frame *rgb=frame[libfreenect2::Frame::Color];
 
-        listener->release(frame);
+            cv::Mat(depth->height, depth->width, CV_32FC1, depth->data).copyTo(*depthMat);
+            cv::Mat(ir->height, ir->width, CV_32FC1, ir->data).copyTo(*irMat);
+            cv::Mat(rgb->height, rgb->width, CV_8UC4, rgb->data).copyTo(*colorMat);
+
+            registrated->apply(rgb,depth,undistorted,registered,true,depth2rgb);
+            cv::Mat(registered->height, registered->width, CV_8UC4, registered->data).copyTo(*rgbdMat);
+
+            listener->release(frame);
+
+            now=std::chrono::system_clock::now();
+            std::cout << "Snapping: "<<this->getId()<<" "<< std::chrono::duration_cast<std::chrono::milliseconds>(now - then).count() << " ms" << endl;
+        }
+        else
+        {
+            std::cout<<this->getId()<<" hasn't new frame"<<std::endl;
+        }
+
+        now=std::chrono::system_clock::now();
+        std::cout << "FRAMES: "<<this->getId()<<" "<< std::chrono::duration_cast<std::chrono::milliseconds>(now - then).count() << " ms" << endl;
+    }
 }
+
 
 std::string Kinect::getSerial()
 {
@@ -80,7 +132,17 @@ int Kinect::getId()
 
 void Kinect::getDepth()
 {
-    cv::imshow("depth: " + getId(), *depthMat / 2048);
+    cv::Mat *tmpDepthMat = new cv::Mat;
+    if(ui_locker.try_lock())
+    {
+        depthMat->copyTo(*tmpDepthMat);
+        ui_locker.unlock();
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    if(!tmpDepthMat->empty())
+    {
+        cv::imshow("depth: " + getIdString(), *tmpDepthMat / 2048);
+    }
 }
 
 void Kinect::rangedDepth()
@@ -95,27 +157,27 @@ void Kinect::getRangedDepth()
 {
     rangedDepthMap->release();
     rangedDepth();
-    cv::imshow("rDepth: " + getId() , *rangedDepthMap / 2048);
+    cv::imshow("rDepth: " + getIdString(), *rangedDepthMap / 2048);
 }
 
 void Kinect::getRGB()
 {
-    cv::imshow("color: " + getId() , *colorMat);
+    cv::imshow("color: " + getIdString(), *colorMat);
 }
 
 void Kinect::getIr()
 {
-    cv::imshow("ir: " + getId(), *irMat);
+    cv::imshow("ir: " + getIdString(), *irMat);
 }
 
 void Kinect::getRGBD()
 {
-    cv::imshow("rgbd: " + getId(), *rgbdMat );
+    cv::imshow("rgbd: " + getIdString(), *rgbdMat );
 }
 
 void Kinect::rangedRGBD()
 {
-    cv::imshow("ranged: " + getId(), *rangeMask );
+    cv::imshow("ranged: " + getIdString(), *rangeMask );
     rgbdMat->copyTo(*rangedRGBDMat,*rangeMask);
 }
 
@@ -123,13 +185,13 @@ void Kinect::getRangedRGBD()
 {
     rangedRGBDMat->release();
     rangedRGBD();
-    cv::imshow("rRGBD: " + getId(), *rangedRGBDMat );
+    cv::imshow("rRGBD: " + getIdString(), *rangedRGBDMat );
 }
 
 void Kinect::depthControl()
 {
-    cv::createTrackbar( "Low Depth range", "rDepth: " + getId(), &low_slider, 40950);
-    cv::createTrackbar( "High Depth range","rDepth: " + getId(), &high_slider, 40950);
+    cv::createTrackbar( "Low Depth range", "rDepth: " + getIdString(), &low_slider, 40950);
+    cv::createTrackbar( "High Depth range","rDepth: " + getIdString(), &high_slider, 40950);
 }
 
 void Kinect::cloudInit()
@@ -199,7 +261,7 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr Kinect::getCloudData()
 
 Kinect::~Kinect()
 {
-    std::cout<<"END "<<dev->getSerialNumber()<<std::endl;
+    std::cout<<"END "<<getId()<<" "<<getSerial()<<std::endl;
     dev->stop();
     dev->close();
     delete registrated;
