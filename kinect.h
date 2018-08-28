@@ -40,6 +40,8 @@
 #define color_bpp 4
 
 static std::mutex ui_locker;
+static std::mutex cloud_locker;
+
 
 
 class Kinect
@@ -64,7 +66,7 @@ public:
     void getRangedRGBD();
 
     void cloudInit();
-    void cloudData();
+    void cloudData(std::atomic<bool> & keep_running);
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr getCloudData();
 
 
@@ -100,8 +102,6 @@ private:
     int high_slider=65535;
 
     pcl::PointCloud<pcl::PointXYZRGB> *cloud = new pcl::PointCloud<pcl::PointXYZRGB>;
-
-    std::chrono::system_clock::time_point then, now;
 
 };
 #endif // KINECT_H

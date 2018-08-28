@@ -40,45 +40,11 @@ void Kinect::registration()
     registrated = new libfreenect2::Registration(dev->getIrCameraParams(),dev->getColorCameraParams());
 }
 
-
-//void Kinect::frames()
-//{
-//    then=std::chrono::system_clock::now();
-
-//    if(listener->waitForNewFrame(frame,camAttachTime))
-//    {
-//        std::cout<<getId()<<" has new frame"<<std::endl;
-
-//        libfreenect2::Frame *depth=frame[libfreenect2::Frame::Depth];
-//        libfreenect2::Frame *ir=frame[libfreenect2::Frame::Ir];
-//        libfreenect2::Frame *rgb=frame[libfreenect2::Frame::Color];
-
-
-//        cv::Mat(depth->height, depth->width, CV_32FC1, depth->data).copyTo(*depthMat);
-//        cv::Mat(ir->height, ir->width, CV_32FC1, ir->data).copyTo(*irMat);
-//        cv::Mat(rgb->height, rgb->width, CV_8UC4, rgb->data).copyTo(*colorMat);
-
-//        registrated->apply(rgb,depth,undistorted,registered,true,depth2rgb);
-//        cv::Mat(registered->height, registered->width, CV_8UC4, registered->data).copyTo(*rgbdMat);
-
-//        listener->release(frame);
-//    }
-//    else
-//    {
-//        std::cout<<getId()<<" hasn't new frame"<<std::endl;
-//    }
-
-//    now=std::chrono::system_clock::now();
-//    std::cout << "FRAMES: "<<getId()<<" "<< std::chrono::duration_cast<std::chrono::milliseconds>(now - then).count() << " ms" << endl;
-
-//}
-
 void Kinect::frames(std::atomic<bool> & keep_running)
 {
+    std::chrono::system_clock::time_point then, now;
     while(keep_running)
     {
-        then=std::chrono::system_clock::now();
-
         if(listener->waitForNewFrame(frame,camAttachTime))
         {
             then=std::chrono::system_clock::now();
@@ -97,15 +63,12 @@ void Kinect::frames(std::atomic<bool> & keep_running)
             listener->release(frame);
 
             now=std::chrono::system_clock::now();
-            std::cout << "Snapping: "<<this->getId()<<" "<< std::chrono::duration_cast<std::chrono::milliseconds>(now - then).count() << " ms" << endl;
+//            std::cout << "Snapping: "<<this->getId()<<" "<< std::chrono::duration_cast<std::chrono::milliseconds>(now - then).count() << " ms" << endl;
         }
         else
         {
             std::cout<<this->getId()<<" hasn't new frame"<<std::endl;
         }
-
-        now=std::chrono::system_clock::now();
-        std::cout << "FRAMES: "<<this->getId()<<" "<< std::chrono::duration_cast<std::chrono::milliseconds>(now - then).count() << " ms" << endl;
     }
 }
 
@@ -167,7 +130,7 @@ void Kinect::getRGB()
 
 void Kinect::getIr()
 {
-    cv::imshow("ir: " + getIdString(), *irMat);
+    cv::imshow("ir: " + getIdString(), *irMat  / 2048);
 }
 
 void Kinect::getRGBD()
@@ -177,7 +140,6 @@ void Kinect::getRGBD()
 
 void Kinect::rangedRGBD()
 {
-    cv::imshow("ranged: " + getIdString(), *rangeMask );
     rgbdMat->copyTo(*rangedRGBDMat,*rangeMask);
 }
 
@@ -190,6 +152,7 @@ void Kinect::getRangedRGBD()
 
 void Kinect::depthControl()
 {
+    cv::namedWindow("rDepth: " + getIdString());
     cv::createTrackbar( "Low Depth range", "rDepth: " + getIdString(), &low_slider, 40950);
     cv::createTrackbar( "High Depth range","rDepth: " + getIdString(), &high_slider, 40950);
 }
@@ -203,12 +166,16 @@ void Kinect::cloudInit()
     cloud->points.resize( cloud->width* cloud->height);
 }
 
-void Kinect::cloudData()
+void Kinect::cloudData(std::atomic<bool> &keep_running)
 {
-
+    std::chrono::system_clock::time_point then, now;
+    while(keep_running)
+    {
+    then=std::chrono::system_clock::now();
     cloudInit();
     float x=0, y=0, z=0;
     unsigned long n=0;
+
     for(int x_side=0;x_side<ir_depth_width;x_side++)
     {
         for(int y_side=0;y_side<ir_depth_height;y_side++)
@@ -220,20 +187,21 @@ void Kinect::cloudData()
             uint8_t g = p[1];
             uint8_t r = p[2];
 
-            if(std::isnan(x) || std::isinf(x))
-            {
-                x=0;
-            }
-            if(std::isnan(y) || std::isinf(y))
-            {
-                y=0;
-            }
-            if(std::isnan(z) || z>1 || std::isinf(z))
-            {
-                x=0;
-                z=0;
-                y=0;
-            }
+//            if(std::isnan(x) || std::isinf(x))
+//            {
+//                x=0;
+//            }
+//            if(std::isnan(y) || std::isinf(y))
+//            {
+//                y=0;
+//            }
+//            if(std::isnan(z) || std::isinf(z))
+//            {
+//                x=0;
+//                z=0;
+//                y=0;
+//            }
+
               cloud->points[n].x=x;
               cloud->points[n].y=y;
               cloud->points[n].z=z;
@@ -244,6 +212,10 @@ void Kinect::cloudData()
               n++;
         }
     }
+    now=std::chrono::system_clock::now();
+    std::cout << "CLOUD: "<<this->getId()<<" "<< std::chrono::duration_cast<std::chrono::milliseconds>(now - then).count() << " ms" << endl;
+    }
+
 }
 
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr Kinect::getCloudData()
@@ -253,8 +225,11 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr Kinect::getCloudData()
     tmpCloud->height = static_cast<uint32_t>(ir_depth_height);
     tmpCloud->is_dense = false;
     tmpCloud->points.resize( cloud->width* cloud->height);
-    pcl::copyPointCloud(*cloud,*tmpCloud);
-
+    if(cloud_locker.try_lock())
+    {
+        pcl::copyPointCloud(*cloud,*tmpCloud);
+        cloud_locker.unlock();
+    }
     return tmpCloud;
 }
 

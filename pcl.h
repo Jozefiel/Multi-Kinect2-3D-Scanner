@@ -1,6 +1,7 @@
 #ifndef PCL_H
 #define PCL_H
 
+#include <memory>
 
 #include <pcl/common/common_headers.h>
 #include <pcl/features/normal_3d.h>
@@ -13,11 +14,12 @@
 #include <pcl/registration/icp.h>
 #include <pcl/filters/voxel_grid.h>
 
-
 class pclKinect
 {
 public:
-    pclKinect(int connectedDevices);
+    pclKinect(const int connectedDevices);
+    ~pclKinect();
+
     void pclAddCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud, int);
     void spinOnce();
 
@@ -25,7 +27,6 @@ public:
 private:
     pcl::visualization::PCLVisualizer *viewer =nullptr;
     std::vector<int> viewPortsId;
-
 };
 
 #endif // PCL_H
