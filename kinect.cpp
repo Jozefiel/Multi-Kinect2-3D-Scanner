@@ -175,8 +175,8 @@ void Kinect::depthControl(std::string window_name)
     cv::namedWindow(window_name + getIdString());
     cv::createTrackbar( "Low Depth range", window_name + getIdString(), &low_slider, 40950);
     cv::createTrackbar( "High Depth range",window_name + getIdString(), &high_slider, 40950);
-    cv::createTrackbar( "High Depth pcl ", window_name + getIdString(), &depth_slider, 100);
-
+    cv::createTrackbar( "Low Depth pcl ", window_name + getIdString(), &low_depth_slider, 10000);
+    cv::createTrackbar( "High Depth pcl ", window_name + getIdString(), &high_depth_slider, 10000);
 }
 
 
@@ -228,12 +228,12 @@ void Kinect::cloudInit()
     cloud->points.resize( cloud->width * cloud->height);
 }
 
-void Kinect::cloudData(std::atomic<bool> &keep_running)
+void Kinect::cloudDataThread(std::atomic<bool> &keep_running)
 {
     std::chrono::system_clock::time_point then, now;
 
-//    while(keep_running)
-//    {
+    while(keep_running)
+    {
         then=std::chrono::system_clock::now();
 
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr tmpCloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
@@ -256,19 +256,19 @@ void Kinect::cloudData(std::atomic<bool> &keep_running)
                 uint8_t g = p[1];
                 uint8_t r = p[2];
 
-                if(std::isnan(x) || std::isinf(x))
+//                if(std::isnan(x) || std::isinf(x))
+//                {
+//                    x=0;
+//                }
+//                if(std::isnan(y) || std::isinf(y))
+//                {
+//                    y=0;
+//                }
+                if(/*std::isnan(z) || std::isinf(z) ||*/ z>(0.8) )
                 {
-                    x=0;
-                }
-                if(std::isnan(y) || std::isinf(y))
-                {
-                    y=0;
-                }
-                if(std::isnan(z) || std::isinf(z) || z<depth_slider/10)
-                {
-                    x=0;
-                    z=0;
-                    y=0;
+                    x=NAN;
+                    z=NAN;
+                    y=NAN;
                 }
 
                 tmpCloud->points[n].x=x;
@@ -281,6 +281,8 @@ void Kinect::cloudData(std::atomic<bool> &keep_running)
                 n++;
             }
         }
+        std::vector<int> removedPoints;
+        pcl::removeNaNFromPointCloud(*tmpCloud,*tmpCloud,removedPoints);
 
         cloudInit();
         pcl::copyPointCloud(*tmpCloud,*cloud);
@@ -289,22 +291,77 @@ void Kinect::cloudData(std::atomic<bool> &keep_running)
 
         now=std::chrono::system_clock::now();
         std::cout << "CLOUD: "<<this->getId()<<" "<< std::chrono::duration_cast<std::chrono::milliseconds>(now - then).count() << " ms" << endl;
-//    }
+    }
 }
+
+
+void Kinect::cloudData()
+{
+    std::chrono::system_clock::time_point then, now;
+    then=std::chrono::system_clock::now();
+
+     pcl::PointCloud<pcl::PointXYZRGB>::Ptr tmpCloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
+     tmpCloud->width = static_cast<uint32_t>(ir_depth_width);
+     tmpCloud->height = static_cast<uint32_t>(ir_depth_height);
+     tmpCloud->is_dense = false;
+     tmpCloud->points.resize( tmpCloud->width* tmpCloud->height);
+
+     float x=0, y=0, z=0;
+     unsigned long n=0;
+
+     for(int x_side=0;x_side<ir_depth_width;x_side++)
+     {
+         for(int y_side=0;y_side<ir_depth_height;y_side++)
+         {
+             float rgb;
+             registrated->getPointXYZRGB(undistorted,registered,y_side,x_side,x,y,z,rgb);
+             const uint8_t *p = reinterpret_cast<uint8_t*>(&rgb);
+             uint8_t b = p[0];
+             uint8_t g = p[1];
+             uint8_t r = p[2];
+
+//             if(std::isnan(x) || std::isinf(x))
+//             {
+//                 x=0;
+//             }
+//             if(std::isnan(y) || std::isinf(y))
+//             {
+//                 y=0;
+//             }
+             if(std::isnan(z) || std::isinf(z) || z <low_depth_slider/5000 || z>high_depth_slider/5000)
+             {
+                 x=0;
+                 z=0;
+                 y=0;
+             }
+
+             tmpCloud->points[n].x=x;
+             tmpCloud->points[n].y=y;
+             tmpCloud->points[n].z=z;
+             tmpCloud->points[n].r=r;
+             tmpCloud->points[n].g=g;
+             tmpCloud->points[n].b=b;
+
+             n++;
+         }
+     }
+
+     cloudInit();
+     pcl::copyPointCloud(*tmpCloud,*cloud);
+     tmpCloud->clear();
+     now=std::chrono::system_clock::now();
+     std::cout << "CLOUD: "<<this->getId()<<" "<< std::chrono::duration_cast<std::chrono::milliseconds>(now - then).count() << " ms" << endl;
+}
+
+
+
+
+
+
+
 
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr Kinect::getCloudData()
 {
-//    pcl::PointCloud<pcl::PointXYZRGB>::Ptr tmpCloud (new pcl::PointCloud<pcl::PointXYZRGB>);
-//    tmpCloud->width = static_cast<uint32_t>(ir_depth_width);
-//    tmpCloud->height = static_cast<uint32_t>(ir_depth_height);
-//    tmpCloud->is_dense = false;
-//    tmpCloud->points.resize( tmpCloud->width* tmpCloud->height);
-
-//    if(cloud_locker.try_lock())
-//    {
-//        pcl::copyPointCloud(*cloud,*tmpCloud);
-//        cloud_locker.unlock();
-//    }
     return cloud;
 }
 

@@ -74,7 +74,8 @@ public:
     void setCascades(std::string cascade_head, std::string cascade_other, bool load_cascade);
 
     void cloudInit();
-    void cloudData(std::atomic<bool> & keep_running);
+    void cloudDataThread(std::atomic<bool> & keep_running);
+    void cloudData();
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr getCloudData();
 
 
@@ -110,7 +111,8 @@ private:
     cv::Mat * rangeMask = new cv::Mat( cv::Mat::zeros(424, 512, CV_8U) );
     int low_slider=5000;
     int high_slider=8000;
-    int depth_slider = 0;
+    int low_depth_slider = 0;
+    int high_depth_slider=10;
 
     cv::CascadeClassifier face_cascade;
     cv::CascadeClassifier eyes_cascade;

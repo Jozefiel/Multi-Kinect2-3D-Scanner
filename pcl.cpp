@@ -1,6 +1,28 @@
 #include "pcl.h"
 
-pclKinect::pclKinect(const int connectedDevices)
+pclCloud::pclCloud(int cam_id)
+{
+    id=cam_id;
+}
+
+void pclCloud::pclCopyCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cam_cloud)
+{
+    pcl::copyPointCloud(*cam_cloud,*cloud);
+}
+
+pcl::PointCloud<pcl::PointXYZRGB>::Ptr pclCloud::getCloud()
+{
+    return cloud;
+}
+
+pclCloud::~pclCloud()
+{
+}
+
+
+//********************************************************************************************************************************************************//
+
+pclViewer::pclViewer(const int connectedDevices)
 {
     viewer=new pcl::visualization::PCLVisualizer("3D Viewer");
     double scale_size=(0.99/connectedDevices);
@@ -12,27 +34,30 @@ pclKinect::pclKinect(const int connectedDevices)
     }
 }
 
-void pclKinect::pclCopyCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr kinect_cloud)
+void pclViewer::pclCopyCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr kinect_cloud)
 {
-    pcl::copyPointCloud(*kinect_cloud,*cloud);
-}
-
-void pclKinect::pclAddCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud, int kinect_id)
-{
-    std::stringstream id_string;
-    id_string << kinect_id;
-    viewer->removePointCloud("cloud_"+id_string.str());
-    if(!cloud->empty())
+    if(!kinect_cloud->empty())
     {
-        viewer->addPointCloud(cloud,"cloud_"+id_string.str(),viewPortsId[kinect_id]);
+        pcl::copyPointCloud(*kinect_cloud,*cloud);
     }
 }
 
-void pclKinect::spinOnce()
+void pclViewer::pclAddCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud, int cam_id)
+{
+    std::stringstream id_string;
+    id_string << cam_id;
+    if(!cloud->empty())
+    {
+        viewer->removePointCloud("cloud_"+id_string.str());
+        viewer->addPointCloud(cloud,"cloud_"+id_string.str(),viewPortsId[cam_id]);
+    }
+}
+
+void pclViewer::spinOnce()
 {
     viewer->spinOnce();
 }
 
-pclKinect::~pclKinect()
+pclViewer::~pclViewer()
 {
 }

@@ -54,7 +54,7 @@ int main()
     pKinect2->loadCascades();
     pKinect1->loadCascades();
 
-    pclKinect pclViewer(connectedDevices);
+    pclViewer pclViewer(connectedDevices);
     pclViewer.spinOnce();
 
     chrono::system_clock::time_point start, stop;
@@ -69,13 +69,13 @@ int main()
     cam1.detach();
     cam2.detach();
 
-//    std::thread cloud_cam_0(&Kinect::cloudData,pKinect0,std::ref(snap_running));
-//    std::thread cloud_cam_1(&Kinect::cloudData,pKinect1,std::ref(snap_running));
-//    std::thread cloud_cam_2(&Kinect::cloudData,pKinect2,std::ref(snap_running));
+    std::thread cloud_cam_0(&Kinect::cloudDataThread,pKinect0,std::ref(snap_running));
+    std::thread cloud_cam_1(&Kinect::cloudDataThread,pKinect1,std::ref(snap_running));
+    std::thread cloud_cam_2(&Kinect::cloudDataThread,pKinect2,std::ref(snap_running));
 
-//    cloud_cam_0.detach();
-//    cloud_cam_1.detach();
-//    cloud_cam_2.detach();
+    cloud_cam_0.detach();
+    cloud_cam_1.detach();
+    cloud_cam_2.detach();
 
     std::atomic<bool> imshow_running {true};
     std::atomic<bool> main_loop {true};
@@ -83,32 +83,29 @@ int main()
     std::thread im_shower(frames_show,pKinect0,pKinect1,pKinect2,std::ref(imshow_running),std::ref(main_loop));
     im_shower.detach();
 
+    pclCloud cloud0(pKinect0->getId());
+    pclCloud cloud1(pKinect1->getId());
+    pclCloud cloud2(pKinect2->getId());
+
     while(main_loop)
     {
 
        start=chrono::system_clock::now();
 
-       std::thread t4(&Kinect::cloudData,pKinect0,std::ref(snap_running));
-       std::thread t5(&Kinect::cloudData,pKinect1,std::ref(snap_running));
-       std::thread t6(&Kinect::cloudData,pKinect2,std::ref(snap_running));
-
-       t4.join();
-       t5.join();
-       t6.join();
-
-//        std::thread t7(&pclKinect::pclAddCloud,&pclViewer,pKinect0->getCloudData(),pKinect0->getId());
-//        std::thread t8(&pclKinect::pclAddCloud,&pclViewer,pKinect1->getCloudData(),pKinect1->getId());
-//        std::thread t9(&pclKinect::pclAddCloud,&pclViewer,pKinect2->getCloudData(),pKinect2->getId());
-
-//    t7.join();
-//    t8.join();
-//    t9.join();
+       cloud0.pclCopyCloud(pKinect0->getCloudData());
+       cloud1.pclCopyCloud(pKinect1->getCloudData());
+       cloud2.pclCopyCloud(pKinect2->getCloudData());
 
 
+       pclViewer.pclAddCloud(cloud0.getCloud(),0);
+       pclViewer.pclAddCloud(cloud1.getCloud(),1);
+       pclViewer.pclAddCloud(cloud2.getCloud(),2);
 
 
-        stop=chrono::system_clock::now();
-  //      cout << "Execution Time last:" << chrono::duration_cast<chrono::milliseconds>(stop - start).count() << " ms" << endl;
+       pclViewer.spinOnce();
+       stop=chrono::system_clock::now();
+       cout << "Execution Time last:" << chrono::duration_cast<chrono::milliseconds>(stop - start).count() << " ms" << endl;
+
     }
 
     return 0;

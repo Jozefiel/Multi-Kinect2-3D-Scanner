@@ -14,11 +14,28 @@
 #include <pcl/registration/icp.h>
 #include <pcl/filters/voxel_grid.h>
 
-class pclKinect
+class pclCloud
 {
 public:
-    pclKinect(const int connectedDevices);
-    ~pclKinect();
+    pclCloud(int cam_id);
+    ~pclCloud();
+
+    void pclAddCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud, int);
+    void pclCopyCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr kinect_cloud);
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr getCloud();
+
+private:
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
+    int id=0;
+
+};
+
+/***********************************************************************************************************************************************************/
+class pclViewer
+{
+public:
+    pclViewer(const int connectedDevices);
+    ~pclViewer();
 
     void pclAddCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud, int);
     void spinOnce();
@@ -29,6 +46,7 @@ private:
     pcl::visualization::PCLVisualizer *viewer =nullptr;
     std::vector<int> viewPortsId;
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
+    int id=0;
 
 };
 
