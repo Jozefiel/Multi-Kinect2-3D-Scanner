@@ -43,6 +43,17 @@ int main()
     std::shared_ptr<Kinect> pKinect1 (&kinect1);
     std::shared_ptr<Kinect> pKinect2 (&kinect2);
 
+    std::string head_cascade = "/home/jozef/Documents/QT/3DScan/cascades/haarcascades/haarcascade_profileface.xml";
+    std::string other_cascade = "/home/jozef/Documents/QT/3DScan/cascades/haarcascades/haarcascade_profileface.xml";
+
+    pKinect0->setCascades(head_cascade,other_cascade,true);
+    pKinect1->setCascades(head_cascade,other_cascade,true);
+    pKinect2->setCascades(head_cascade,other_cascade,true);
+
+    pKinect0->loadCascades();
+    pKinect2->loadCascades();
+    pKinect1->loadCascades();
+
     pclKinect pclViewer(connectedDevices);
     pclViewer.spinOnce();
 
@@ -58,13 +69,13 @@ int main()
     cam1.detach();
     cam2.detach();
 
-    std::thread cloud_cam_0(&Kinect::cloudData,pKinect0,std::ref(snap_running));
-    std::thread cloud_cam_1(&Kinect::cloudData,pKinect1,std::ref(snap_running));
-    std::thread cloud_cam_2(&Kinect::cloudData,pKinect2,std::ref(snap_running));
+//    std::thread cloud_cam_0(&Kinect::cloudData,pKinect0,std::ref(snap_running));
+//    std::thread cloud_cam_1(&Kinect::cloudData,pKinect1,std::ref(snap_running));
+//    std::thread cloud_cam_2(&Kinect::cloudData,pKinect2,std::ref(snap_running));
 
-    cloud_cam_0.detach();
-    cloud_cam_1.detach();
-    cloud_cam_2.detach();
+//    cloud_cam_0.detach();
+//    cloud_cam_1.detach();
+//    cloud_cam_2.detach();
 
     std::atomic<bool> imshow_running {true};
     std::atomic<bool> main_loop {true};
@@ -77,28 +88,27 @@ int main()
 
        start=chrono::system_clock::now();
 
-//       std::thread t4(&Kinect::cloudData,pKinect0);
-//       std::thread t5(&Kinect::cloudData,pKinect1);
-//       std::thread t6(&Kinect::cloudData,pKinect2);
+       std::thread t4(&Kinect::cloudData,pKinect0,std::ref(snap_running));
+       std::thread t5(&Kinect::cloudData,pKinect1,std::ref(snap_running));
+       std::thread t6(&Kinect::cloudData,pKinect2,std::ref(snap_running));
 
-//       t4.join();
-//       t5.join();
-//       t6.join();
+       t4.join();
+       t5.join();
+       t6.join();
 
-        std::thread t7(&pclKinect::pclAddCloud,&pclViewer,pKinect0->getCloudData(),pKinect0->getId());
-        std::thread t8(&pclKinect::pclAddCloud,&pclViewer,pKinect1->getCloudData(),pKinect1->getId());
-        std::thread t9(&pclKinect::pclAddCloud,&pclViewer,pKinect2->getCloudData(),pKinect2->getId());
+//        std::thread t7(&pclKinect::pclAddCloud,&pclViewer,pKinect0->getCloudData(),pKinect0->getId());
+//        std::thread t8(&pclKinect::pclAddCloud,&pclViewer,pKinect1->getCloudData(),pKinect1->getId());
+//        std::thread t9(&pclKinect::pclAddCloud,&pclViewer,pKinect2->getCloudData(),pKinect2->getId());
 
-    t7.join();
-    t8.join();
-    t9.join();
+//    t7.join();
+//    t8.join();
+//    t9.join();
 
 
-        pclViewer.spinOnce();
 
 
         stop=chrono::system_clock::now();
-        cout << "Execution Time last:" << chrono::duration_cast<chrono::milliseconds>(stop - start).count() << " ms" << endl;
+  //      cout << "Execution Time last:" << chrono::duration_cast<chrono::milliseconds>(stop - start).count() << " ms" << endl;
     }
 
     return 0;
@@ -112,11 +122,31 @@ void frames_show(std::shared_ptr<Kinect> pKinect0, std::shared_ptr<Kinect> pKine
     {
         start=chrono::system_clock::now();
 
-        pKinect0->getRangedDepth();
-        pKinect1->getRangedDepth();
-        pKinect2->getRangedDepth();
+        pKinect0->getDepth();
+        pKinect1->getDepth();
+        pKinect2->getDepth();
 
-        auto key = cv::waitKey(5);
+//        pKinect0->getRGB();
+//        pKinect1->getRGB();
+//        pKinect2->getRGB();
+
+//        pKinect0->getIr();
+//        pKinect1->getIr();
+//        pKinect2->getIr();
+
+//        pKinect0->getRGBD();
+//        pKinect1->getRGBD();
+//        pKinect2->getRGBD();
+
+        pKinect0->getRangedRGBD();
+        pKinect1->getRangedRGBD();
+        pKinect2->getRangedRGBD();
+
+//        pKinect0->getRangedDepth();
+//        pKinect1->getRangedDepth();
+//        pKinect2->getRangedDepth();
+
+        auto key = cv::waitKey(50);
         switch( (char) key)
         {
             case 'Q':
@@ -126,7 +156,7 @@ void frames_show(std::shared_ptr<Kinect> pKinect0, std::shared_ptr<Kinect> pKine
                 break;
         }
         stop=chrono::system_clock::now();
-  //      cout << "ImVIEWER: " << chrono::duration_cast<chrono::milliseconds>(stop - start).count() << " ms" << endl;
+   //     cout << "ImVIEWER: " << chrono::duration_cast<chrono::milliseconds>(stop - start).count() << " ms" << endl;
     }
 }
 

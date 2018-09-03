@@ -22,11 +22,14 @@ public:
 
     void pclAddCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud, int);
     void spinOnce();
+    void pclCopyCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr kinect_cloud);
 
 
 private:
     pcl::visualization::PCLVisualizer *viewer =nullptr;
     std::vector<int> viewPortsId;
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
+
 };
 
 #endif // PCL_H

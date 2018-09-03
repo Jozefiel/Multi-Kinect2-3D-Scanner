@@ -12,12 +12,20 @@ pclKinect::pclKinect(const int connectedDevices)
     }
 }
 
+void pclKinect::pclCopyCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr kinect_cloud)
+{
+    pcl::copyPointCloud(*kinect_cloud,*cloud);
+}
+
 void pclKinect::pclAddCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud, int kinect_id)
 {
     std::stringstream id_string;
     id_string << kinect_id;
     viewer->removePointCloud("cloud_"+id_string.str());
-    viewer->addPointCloud(cloud,"cloud_"+id_string.str(),viewPortsId[kinect_id]);
+    if(!cloud->empty())
+    {
+        viewer->addPointCloud(cloud,"cloud_"+id_string.str(),viewPortsId[kinect_id]);
+    }
 }
 
 void pclKinect::spinOnce()

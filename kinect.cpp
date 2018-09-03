@@ -57,13 +57,14 @@ void Kinect::frames(std::atomic<bool> & keep_running)
             cv::Mat(ir->height, ir->width, CV_32FC1, ir->data).copyTo(*irMat);
             cv::Mat(rgb->height, rgb->width, CV_8UC4, rgb->data).copyTo(*colorMat);
 
+
             registrated->apply(rgb,depth,undistorted,registered,true,depth2rgb);
             cv::Mat(registered->height, registered->width, CV_8UC4, registered->data).copyTo(*rgbdMat);
 
             listener->release(frame);
 
             now=std::chrono::system_clock::now();
-//            std::cout << "Snapping: "<<this->getId()<<" "<< std::chrono::duration_cast<std::chrono::milliseconds>(now - then).count() << " ms" << endl;
+ //           std::cout << "Snapping: "<<this->getId()<<" "<< std::chrono::duration_cast<std::chrono::milliseconds>(now - then).count() << " ms" << endl;
         }
         else
         {
@@ -95,67 +96,128 @@ int Kinect::getId()
 
 void Kinect::getDepth()
 {
-    cv::Mat *tmpDepthMat = new cv::Mat;
-    if(ui_locker.try_lock())
-    {
-        depthMat->copyTo(*tmpDepthMat);
-        ui_locker.unlock();
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    }
-    if(!tmpDepthMat->empty())
-    {
-        cv::imshow("depth: " + getIdString(), *tmpDepthMat / 2048);
-    }
+    cv::imshow("depth: " + getIdString(), *depthMat / 2048);
 }
 
-void Kinect::rangedDepth()
+void Kinect::rangedDepth(std::string window_name)
 {
-    depthControl();
+    depthControl(window_name);
     rangeMask->release();
+    rangedDepthMap->release();
     cv::inRange(*depthMat,low_slider/10,high_slider/10,*rangeMask);
     depthMat->copyTo(*rangedDepthMap,*rangeMask);
 }
 
 void Kinect::getRangedDepth()
 {
-    rangedDepthMap->release();
-    rangedDepth();
-    cv::imshow("rDepth: " + getIdString(), *rangedDepthMap / 2048);
+    if(!depthMat->empty())
+    {
+        std::string window_name="rDepth";
+        rangedDepth(window_name);
+        cv::imshow(window_name + getIdString(), *rangedDepthMap / 2048);
+    }
 }
 
 void Kinect::getRGB()
 {
-    cv::imshow("color: " + getIdString(), *colorMat);
+    if(!colorMat->empty())
+    {
+        cv::imshow("color: " + getIdString(), *colorMat);
+    }
 }
 
 void Kinect::getIr()
 {
-    cv::imshow("ir: " + getIdString(), *irMat  / 2048);
+    if(!irMat->empty())
+    {
+        cv::imshow("ir: " + getIdString(), *irMat  / 2048);
+    }
 }
 
 void Kinect::getRGBD()
 {
-    cv::imshow("rgbd: " + getIdString(), *rgbdMat );
+    if(!rgbdMat->empty())
+    {
+        cv::imshow("rgbd: " + getIdString(), *rgbdMat );
+    }
 }
 
-void Kinect::rangedRGBD()
+void Kinect::rangedRGBD(std::string window_name)
 {
-    rgbdMat->copyTo(*rangedRGBDMat,*rangeMask);
+    rangedRGBDMat->release();
+    rangedDepth(window_name);
+    if(!rgbdMat->empty() && !rangeMask->empty())
+    {
+        rgbdMat->copyTo(*rangedRGBDMat,*rangeMask);
+    }
+    else if (!rgbdMat->empty())
+    {
+        rgbdMat->copyTo(*rangedRGBDMat);
+    }
 }
 
 void Kinect::getRangedRGBD()
 {
-    rangedRGBDMat->release();
-    rangedRGBD();
-    cv::imshow("rRGBD: " + getIdString(), *rangedRGBDMat );
+    if(!rgbdMat->empty() && !rangeMask->empty())
+    {
+        std::string window_name = "rRGBD";
+        rangedRGBD(window_name);
+        headDetect();
+        if(!rangedRGBDMat->empty())
+        {
+            cv::imshow(window_name + getIdString(), *rangedRGBDMat );
+        }
+    }
 }
 
-void Kinect::depthControl()
+void Kinect::depthControl(std::string window_name)
 {
-    cv::namedWindow("rDepth: " + getIdString());
-    cv::createTrackbar( "Low Depth range", "rDepth: " + getIdString(), &low_slider, 40950);
-    cv::createTrackbar( "High Depth range","rDepth: " + getIdString(), &high_slider, 40950);
+    cv::namedWindow(window_name + getIdString());
+    cv::createTrackbar( "Low Depth range", window_name + getIdString(), &low_slider, 40950);
+    cv::createTrackbar( "High Depth range",window_name + getIdString(), &high_slider, 40950);
+    cv::createTrackbar( "High Depth pcl ", window_name + getIdString(), &depth_slider, 100);
+
 }
+
+
+void Kinect::setCascades(std::string cascade_head,std::string cascade_other, bool load_cascade)
+{
+    face_cascade_name=cascade_head;
+    other_cascade_name=cascade_other;
+    if(load_cascade)
+    {
+        loadCascades();
+    }
+}
+
+void Kinect::loadCascades()
+{
+    if( !face_cascade.load( face_cascade_name ) )
+    {
+        std::cout<<"face_cascade not loaded"<<std::endl;
+    };
+    if( !eyes_cascade.load( other_cascade_name ) )
+    {
+        std::cout<<"eyes_cascade not loaded"<<std::endl;
+    };
+}
+
+void Kinect::headDetect()
+{
+    std::vector<cv::Rect> faces;
+    cv::Mat tmpMat = rangedRGBDMat->clone();
+    cv::Mat tmpMatGray;
+    cv::cvtColor(tmpMat,tmpMatGray,CV_BGR2GRAY);
+    cv::equalizeHist(tmpMatGray,tmpMatGray);
+
+    face_cascade.detectMultiScale( tmpMatGray, faces, 1.1, 2, 0|CV_HAAR_SCALE_IMAGE, cv::Size(10, 60) );
+
+    for( size_t i = 0; i < faces.size(); i++ )
+    {
+        cv::rectangle(*rangedRGBDMat, faces[i], cv::Scalar(255,0,125), 3, 8, 0);
+    }
+}
+
 
 void Kinect::cloudInit()
 {
@@ -163,74 +225,87 @@ void Kinect::cloudInit()
     cloud->width = static_cast<uint32_t>(ir_depth_width);
     cloud->height = static_cast<uint32_t>(ir_depth_height);
     cloud->is_dense = false;
-    cloud->points.resize( cloud->width* cloud->height);
+    cloud->points.resize( cloud->width * cloud->height);
 }
 
 void Kinect::cloudData(std::atomic<bool> &keep_running)
 {
     std::chrono::system_clock::time_point then, now;
-    while(keep_running)
-    {
-    then=std::chrono::system_clock::now();
-    cloudInit();
-    float x=0, y=0, z=0;
-    unsigned long n=0;
 
-    for(int x_side=0;x_side<ir_depth_width;x_side++)
-    {
-        for(int y_side=0;y_side<ir_depth_height;y_side++)
+//    while(keep_running)
+//    {
+        then=std::chrono::system_clock::now();
+
+        pcl::PointCloud<pcl::PointXYZRGB>::Ptr tmpCloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
+        tmpCloud->width = static_cast<uint32_t>(ir_depth_width);
+        tmpCloud->height = static_cast<uint32_t>(ir_depth_height);
+        tmpCloud->is_dense = false;
+        tmpCloud->points.resize( tmpCloud->width* tmpCloud->height);
+
+        float x=0, y=0, z=0;
+        unsigned long n=0;
+
+        for(int x_side=0;x_side<ir_depth_width;x_side++)
         {
-            float rgb;
-            registrated->getPointXYZRGB(undistorted,registered,y_side,x_side,x,y,z,rgb);
-            const uint8_t *p = reinterpret_cast<uint8_t*>(&rgb);
-            uint8_t b = p[0];
-            uint8_t g = p[1];
-            uint8_t r = p[2];
+            for(int y_side=0;y_side<ir_depth_height;y_side++)
+            {
+                float rgb;
+                registrated->getPointXYZRGB(undistorted,registered,y_side,x_side,x,y,z,rgb);
+                const uint8_t *p = reinterpret_cast<uint8_t*>(&rgb);
+                uint8_t b = p[0];
+                uint8_t g = p[1];
+                uint8_t r = p[2];
 
-//            if(std::isnan(x) || std::isinf(x))
-//            {
-//                x=0;
-//            }
-//            if(std::isnan(y) || std::isinf(y))
-//            {
-//                y=0;
-//            }
-//            if(std::isnan(z) || std::isinf(z))
-//            {
-//                x=0;
-//                z=0;
-//                y=0;
-//            }
+                if(std::isnan(x) || std::isinf(x))
+                {
+                    x=0;
+                }
+                if(std::isnan(y) || std::isinf(y))
+                {
+                    y=0;
+                }
+                if(std::isnan(z) || std::isinf(z) || z<depth_slider/10)
+                {
+                    x=0;
+                    z=0;
+                    y=0;
+                }
 
-              cloud->points[n].x=x;
-              cloud->points[n].y=y;
-              cloud->points[n].z=z;
-              cloud->points[n].r=r;
-              cloud->points[n].g=g;
-              cloud->points[n].b=b;
+                tmpCloud->points[n].x=x;
+                tmpCloud->points[n].y=y;
+                tmpCloud->points[n].z=z;
+                tmpCloud->points[n].r=r;
+                tmpCloud->points[n].g=g;
+                tmpCloud->points[n].b=b;
 
-              n++;
+                n++;
+            }
         }
-    }
-    now=std::chrono::system_clock::now();
-    std::cout << "CLOUD: "<<this->getId()<<" "<< std::chrono::duration_cast<std::chrono::milliseconds>(now - then).count() << " ms" << endl;
-    }
 
+        cloudInit();
+        pcl::copyPointCloud(*tmpCloud,*cloud);
+
+        tmpCloud->clear();
+
+        now=std::chrono::system_clock::now();
+        std::cout << "CLOUD: "<<this->getId()<<" "<< std::chrono::duration_cast<std::chrono::milliseconds>(now - then).count() << " ms" << endl;
+//    }
 }
 
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr Kinect::getCloudData()
 {
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr tmpCloud (new pcl::PointCloud<pcl::PointXYZRGB>);
-    tmpCloud->width = static_cast<uint32_t>(ir_depth_width);
-    tmpCloud->height = static_cast<uint32_t>(ir_depth_height);
-    tmpCloud->is_dense = false;
-    tmpCloud->points.resize( cloud->width* cloud->height);
-    if(cloud_locker.try_lock())
-    {
-        pcl::copyPointCloud(*cloud,*tmpCloud);
-        cloud_locker.unlock();
-    }
-    return tmpCloud;
+//    pcl::PointCloud<pcl::PointXYZRGB>::Ptr tmpCloud (new pcl::PointCloud<pcl::PointXYZRGB>);
+//    tmpCloud->width = static_cast<uint32_t>(ir_depth_width);
+//    tmpCloud->height = static_cast<uint32_t>(ir_depth_height);
+//    tmpCloud->is_dense = false;
+//    tmpCloud->points.resize( tmpCloud->width* tmpCloud->height);
+
+//    if(cloud_locker.try_lock())
+//    {
+//        pcl::copyPointCloud(*cloud,*tmpCloud);
+//        cloud_locker.unlock();
+//    }
+    return cloud;
 }
 
 
@@ -240,7 +315,6 @@ Kinect::~Kinect()
     dev->stop();
     dev->close();
     delete registrated;
-
 }
 
 
