@@ -69,6 +69,8 @@ public:
     void getRGBD();
     void getRangedRGBD();
 
+    cv::Mat getRGBDFrame();
+
     void headDetect();
     void loadCascades();
     void setCascades(std::string cascade_head, std::string cascade_other, bool load_cascade);
@@ -117,7 +119,7 @@ private:
     cv::CascadeClassifier face_cascade;
     cv::CascadeClassifier eyes_cascade;
 
-    std::string face_cascade_name = "/home/jozef/Documents/QT/3DScan/cascades/haarcascades/haarcascade_fullbody.xml";
+    std::string face_cascade_name = "/home/jozef/Documents/QT/3DScan/cascades/haarcascades/haarcascade_profileface.xml";
     std::string other_cascade_name = "/home/jozef/Documents/QT/3DScan/cascades/haarcascades/haarcascade_eye_tree_eyeglasses.xml";
 
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);

@@ -15,6 +15,23 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr pclCloud::getCloud()
     return cloud;
 }
 
+pcl::PointCloud<pcl::PointXYZRGB>::Ptr pclCloud::getTransformedCloud()
+{
+    return transformed_cloud;
+}
+
+void pclCloud::setTransformationMatrix(Eigen::Matrix4f transform)
+{
+   transform_matrix=transform;
+}
+
+void pclCloud::transformPointCloud()
+{
+    pcl::transformPointCloud(*cloud,*transformed_cloud,transform_matrix);
+}
+
+
+
 pclCloud::~pclCloud()
 {
 }
@@ -22,11 +39,15 @@ pclCloud::~pclCloud()
 
 //********************************************************************************************************************************************************//
 
-pclViewer::pclViewer(const int connectedDevices)
+pclViewer::pclViewer(int view_ports, std::string window_name)
 {
-    viewer=new pcl::visualization::PCLVisualizer("3D Viewer");
-    double scale_size=(0.99/connectedDevices);
-    for(int i=0;i<connectedDevices;i++)
+    if(window_name.empty())
+    {
+        window_name="PCL_Viewer";
+    }
+    viewer=new pcl::visualization::PCLVisualizer(window_name);
+    double scale_size=(0.99/view_ports);
+    for(int i=0;i<view_ports;i++)
     {
         int viewPortId (0);
         viewPortsId.push_back(viewPortId);
@@ -42,14 +63,28 @@ void pclViewer::pclCopyCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr kinect_cloud
     }
 }
 
-void pclViewer::pclAddCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud, int cam_id)
+void pclViewer::pclAddCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud0, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud1, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud2)
+{
+    if(!cloud0->empty() && !cloud0->empty() && !cloud0->empty())
+    {
+        viewer->removePointCloud("cloud0");
+        viewer->addPointCloud(cloud0,"cloud0");
+//        viewer->removePointCloud("cloud1");
+//        viewer->addPointCloud(cloud1,"cloud1");
+        viewer->removePointCloud("cloud2");
+        viewer->addPointCloud(cloud2,"cloud2");
+    }
+}
+
+
+void pclViewer::pclAddCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pCloud, int cam_id)
 {
     std::stringstream id_string;
     id_string << cam_id;
-    if(!cloud->empty())
+    if(!pCloud->empty())
     {
         viewer->removePointCloud("cloud_"+id_string.str());
-        viewer->addPointCloud(cloud,"cloud_"+id_string.str(),viewPortsId[cam_id]);
+        viewer->addPointCloud(pCloud,"cloud_"+id_string.str(),viewPortsId[cam_id]);
     }
 }
 
