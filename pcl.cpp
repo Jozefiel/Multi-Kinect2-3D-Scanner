@@ -7,7 +7,15 @@ pclCloud::pclCloud(int cam_id)
 
 void pclCloud::pclCopyCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cam_cloud)
 {
-    pcl::copyPointCloud(*cam_cloud,*cloud);
+    if(!cam_cloud->empty())
+    {
+        cloud->clear();
+        pcl::copyPointCloud(*cam_cloud,*cloud);
+    }
+    else
+    {
+        std::cout<<"empty cloud: "<<id<<std::endl;
+    }
 }
 
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr pclCloud::getCloud()
@@ -55,11 +63,11 @@ pclViewer::pclViewer(int view_ports, std::string window_name)
     }
 }
 
-void pclViewer::pclCopyCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr kinect_cloud)
+void pclViewer::pclCopyCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cam_cloud)
 {
-    if(!kinect_cloud->empty())
+    if(!cam_cloud->empty())
     {
-        pcl::copyPointCloud(*kinect_cloud,*cloud);
+        pcl::copyPointCloud(*cam_cloud,*cloud);
     }
 }
 
@@ -69,8 +77,8 @@ void pclViewer::pclAddCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud0, pcl::
     {
         viewer->removePointCloud("cloud0");
         viewer->addPointCloud(cloud0,"cloud0");
-//        viewer->removePointCloud("cloud1");
-//        viewer->addPointCloud(cloud1,"cloud1");
+        viewer->removePointCloud("cloud1");
+        viewer->addPointCloud(cloud1,"cloud1");
         viewer->removePointCloud("cloud2");
         viewer->addPointCloud(cloud2,"cloud2");
     }

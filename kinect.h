@@ -13,8 +13,6 @@
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/core/core.hpp"
 
-
-
 #include <pcl/common/common_headers.h>
 #include <pcl/features/normal_3d.h>
 #include <pcl/visualization/cloud_viewer.h>
@@ -42,11 +40,6 @@
 #define color_width 1920
 #define color_height 1080+2
 #define color_bpp 4
-
-static std::mutex ui_locker;
-static std::mutex cloud_locker;
-
-
 
 class Kinect
 {
@@ -89,13 +82,13 @@ public:
 
     //variables
 
-
+    std::timed_mutex cloud_mutex;
 
 private:
     std::string serial;
     int kinect_id;
 
-    libfreenect2::Freenect2Device *dev = nullptr;
+    libfreenect2::Freenect2Device * dev = nullptr;
     libfreenect2::Registration * registrated = nullptr;
     libfreenect2::SyncMultiFrameListener *listener;
     libfreenect2::FrameMap frame;
@@ -111,6 +104,7 @@ private:
     cv::Mat * rgbdMat = new cv::Mat( cv::Mat::zeros(1082, 1920, CV_8UC4) );
     cv::Mat * rangedRGBDMat = new cv::Mat( cv::Mat::zeros(1082, 1920, CV_8UC4) );
     cv::Mat * rangeMask = new cv::Mat( cv::Mat::zeros(424, 512, CV_8U) );
+
     int low_slider=5000;
     int high_slider=8000;
     int low_depth_slider = 0;
@@ -123,6 +117,8 @@ private:
     std::string other_cascade_name = "/home/jozef/Documents/QT/3DScan/cascades/haarcascades/haarcascade_eye_tree_eyeglasses.xml";
 
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
+    std::timed_mutex mutex;
+
 
 };
 #endif // KINECT_H

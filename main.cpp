@@ -138,26 +138,39 @@ int main()
         cloud2.setTransformationMatrix(transform_1);
 
         start=chrono::system_clock::now();
-        cloud0.pclCopyCloud(pKinect0->getCloudData());
-        cloud1.pclCopyCloud(pKinect1->getCloudData());
-        cloud2.pclCopyCloud(pKinect2->getCloudData());
 
+        if(pKinect0->cloud_mutex.try_lock_for(std::chrono::milliseconds(10)))
+        {
+            cloud0.pclCopyCloud(pKinect0->getCloudData());
+            pKinect0->cloud_mutex.unlock();
+        }
+
+        if(pKinect1->cloud_mutex.try_lock_for(std::chrono::milliseconds(10)))
+        {
+            cloud1.pclCopyCloud(pKinect1->getCloudData());
+            pKinect1->cloud_mutex.unlock();
+        }
+
+
+        if(pKinect2->cloud_mutex.try_lock_for(std::chrono::milliseconds(10)))
+        {
+            cloud2.pclCopyCloud(pKinect2->getCloudData());
+            pKinect2->cloud_mutex.unlock();
+        }
 
        cloud0.transformPointCloud();
        cloud1.transformPointCloud();
        cloud2.transformPointCloud();
 
-
        cloudViewer.pclAddCloud(cloud0.getCloud(),0);
        cloudViewer.pclAddCloud(cloud1.getCloud(),1);
        cloudViewer.pclAddCloud(cloud2.getCloud(),2);
-
        rotationViewer.pclAddCloud(cloud0.getTransformedCloud(),cloud1.getTransformedCloud(),cloud2.getTransformedCloud());
 
-       cloudViewer.spinOnce();
+ //      cloudViewer.spinOnce();
        rotationViewer.spinOnce();
        stop=chrono::system_clock::now();
- //      cout << "Execution Time last:" << chrono::duration_cast<chrono::milliseconds>(stop - start).count() << " ms" << endl;
+       cout << "Execution Time last:" << chrono::duration_cast<chrono::milliseconds>(stop - start).count() << " ms" << endl;
 
     }
 

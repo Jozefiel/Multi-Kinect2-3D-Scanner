@@ -47,6 +47,7 @@ void Kinect::frames(std::atomic<bool> & keep_running)
     {
         if(listener->waitForNewFrame(frame,camAttachTime))
         {
+
             then=std::chrono::system_clock::now();
 
             libfreenect2::Frame *depth=frame[libfreenect2::Frame::Depth];
@@ -57,14 +58,24 @@ void Kinect::frames(std::atomic<bool> & keep_running)
             cv::Mat(ir->height, ir->width, CV_32FC1, ir->data).copyTo(*irMat);
             cv::Mat(rgb->height, rgb->width, CV_8UC4, rgb->data).copyTo(*colorMat);
 
+//            if(mutex.try_lock_for(std::chrono::milliseconds(10)))
+//            {
+//                std::cout<<"mutex for frames locked "<<kinect_id<<std::endl;
+                registrated->apply(rgb,depth,undistorted,registered,true,depth2rgb);
+//                mutex.unlock();
+//            }
+//            else
+//            {
+//               std::cout<<"mutex for frames error "<<kinect_id<<std::endl;
 
-            registrated->apply(rgb,depth,undistorted,registered,true,depth2rgb);
+//            }
+
             cv::Mat(registered->height, registered->width, CV_8UC4, registered->data).copyTo(*rgbdMat);
 
-            listener->release(frame);
-
             now=std::chrono::system_clock::now();
- //           std::cout << "Snapping: "<<this->getId()<<" "<< std::chrono::duration_cast<std::chrono::milliseconds>(now - then).count() << " ms" << endl;
+//            std::cout << "Snapping: "<<this->getId()<<" "<< std::chrono::duration_cast<std::chrono::milliseconds>(now - then).count() << " ms" << endl;
+
+            listener->release(frame);
         }
         else
         {
@@ -261,15 +272,7 @@ void Kinect::cloudDataThread(std::atomic<bool> &keep_running)
                 uint8_t g = p[1];
                 uint8_t r = p[2];
 
-//                if(std::isnan(x) || std::isinf(x))
-//                {
-//                    x=0;
-//                }
-//                if(std::isnan(y) || std::isinf(y))
-//                {
-//                    y=0;
-//                }
-                if(/*std::isnan(z) || std::isinf(z) ||*/ z>(0.8) )
+                if( z>(0.7) || std::isinf(z))
                 {
                     x=NAN;
                     z=NAN;
@@ -286,16 +289,28 @@ void Kinect::cloudDataThread(std::atomic<bool> &keep_running)
                 n++;
             }
         }
+
         std::vector<int> removedPoints;
         pcl::removeNaNFromPointCloud(*tmpCloud,*tmpCloud,removedPoints);
 
-        cloudInit();
-        pcl::copyPointCloud(*tmpCloud,*cloud);
-
+        if(!tmpCloud->empty())
+        {
+            if(cloud_mutex.try_lock_for(std::chrono::milliseconds(5)))
+            {
+//                std::cout<<"No empty cloud: "<<kinect_id<<std::endl;
+                cloudInit();
+                pcl::copyPointCloud(*tmpCloud,*cloud);
+                cloud_mutex.unlock();
+            }
+        }
+        else
+        {
+            std::cout<<"Empty cloud: "<<kinect_id<<std::endl;
+        }
         tmpCloud->clear();
 
         now=std::chrono::system_clock::now();
-//        std::cout << "CLOUD: "<<this->getId()<<" "<< std::chrono::duration_cast<std::chrono::milliseconds>(now - then).count() << " ms" << endl;
+        std::cout << "CLOUD: "<<this->getId()<<" "<< std::chrono::duration_cast<std::chrono::milliseconds>(now - then).count() << " ms" << endl;
     }
 }
 
@@ -351,11 +366,23 @@ void Kinect::cloudData()
          }
      }
 
-     cloudInit();
-     pcl::copyPointCloud(*tmpCloud,*cloud);
+     if(!tmpCloud->empty())
+     {
+         if(cloud_mutex.try_lock_for(std::chrono::milliseconds(10)))
+         {
+             std::cout<<"No empty cloud: "<<kinect_id<<std::endl;
+             cloudInit();
+             pcl::copyPointCloud(*tmpCloud,*cloud);
+             cloud_mutex.unlock();
+         }
+     }
+     else
+     {
+         std::cout<<"Empty cloud: "<<kinect_id<<std::endl;
+     }
      tmpCloud->clear();
      now=std::chrono::system_clock::now();
-     std::cout << "CLOUD: "<<this->getId()<<" "<< std::chrono::duration_cast<std::chrono::milliseconds>(now - then).count() << " ms" << endl;
+//     std::cout << "CLOUD: "<<this->getId()<<" "<< std::chrono::duration_cast<std::chrono::milliseconds>(now - then).count() << " ms" << endl;
 }
 
 

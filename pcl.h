@@ -11,6 +11,8 @@
 #include <pcl/registration/icp.h>
 #include <pcl/filters/voxel_grid.h>
 
+#include <chrono>
+#include <thread>
 
 class pclCloud
 {
