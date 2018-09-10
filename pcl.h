@@ -1,8 +1,6 @@
 #ifndef PCL_H
 #define PCL_H
 
-#include <pcl/common/common_headers.h>
-#include <pcl/features/normal_3d.h>
 #include <pcl/visualization/cloud_viewer.h>
 #include <pcl/point_types.h>
 #include <pcl/io/pcd_io.h>
@@ -10,6 +8,7 @@
 #include <pcl/conversions.h>
 #include <pcl/registration/icp.h>
 #include <pcl/filters/voxel_grid.h>
+#include <pcl/filters/statistical_outlier_removal.h>
 
 #include <chrono>
 #include <thread>
@@ -28,6 +27,9 @@ public:
     void setTransformationMatrix(Eigen::Matrix4f transform_matrix);
     void transformPointCloud();
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr getTransformedCloud();
+    void removeOutliers(int meanK, double mulTresh);
+    void mergeClouds(std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> clouds);
+
 
 private:
     int id=0;

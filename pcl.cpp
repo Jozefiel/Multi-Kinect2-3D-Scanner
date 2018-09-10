@@ -38,6 +38,23 @@ void pclCloud::transformPointCloud()
     pcl::transformPointCloud(*cloud,*transformed_cloud,transform_matrix);
 }
 
+void pclCloud::removeOutliers(int meanK, double mulTresh)
+{
+    pcl::StatisticalOutlierRemoval<pcl::PointXYZRGB> sor;
+    sor.setInputCloud(cloud);
+    sor.setMeanK(meanK);
+    sor.setStddevMulThresh(mulTresh);
+    sor.filter(*cloud);
+}
+
+void pclCloud::mergeClouds(std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> clouds)
+{
+    cloud->clear();
+    for(auto i=0;i<clouds.size();i++)
+    {
+        *cloud+=*clouds[i];
+    }
+}
 
 
 pclCloud::~pclCloud()

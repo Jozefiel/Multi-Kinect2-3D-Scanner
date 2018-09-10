@@ -310,7 +310,7 @@ void Kinect::cloudDataThread(std::atomic<bool> &keep_running)
         tmpCloud->clear();
 
         now=std::chrono::system_clock::now();
-        std::cout << "CLOUD: "<<this->getId()<<" "<< std::chrono::duration_cast<std::chrono::milliseconds>(now - then).count() << " ms" << endl;
+  //      std::cout << "CLOUD: "<<this->getId()<<" "<< std::chrono::duration_cast<std::chrono::milliseconds>(now - then).count() << " ms" << endl;
     }
 }
 
