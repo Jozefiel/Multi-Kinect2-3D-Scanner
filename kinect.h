@@ -1,28 +1,7 @@
 #ifndef KINECT_H
 #define KINECT_H
 
-#include <libfreenect2/libfreenect2.hpp>
-#include <libfreenect2/frame_listener_impl.h>
-#include <libfreenect2/frame_listener.hpp>
-#include <libfreenect2/registration.h>
-#include <libfreenect2/packet_pipeline.h>
-#include <libfreenect2/logger.h>
-
-#include "opencv2/objdetect/objdetect.hpp"
-#include "opencv2/highgui/highgui.hpp"
-#include "opencv2/imgproc/imgproc.hpp"
-#include "opencv2/core/core.hpp"
-
-#include <pcl/common/common_headers.h>
-#include <pcl/features/normal_3d.h>
-#include <pcl/visualization/cloud_viewer.h>
-#include <pcl/point_types.h>
-#include <pcl/io/pcd_io.h>
-#include <pcl/io/ply_io.h>
-#include <pcl/registration/icp.h>
-#include <pcl/conversions.h>
-#include <pcl/registration/icp.h>
-#include <pcl/filters/voxel_grid.h>
+#include "camera.h"
 
 #include <string>
 #include <iostream>
@@ -33,6 +12,16 @@
 #include <chrono>
 #include <thread>
 
+#include <libfreenect2/libfreenect2.hpp>
+#include <libfreenect2/frame_listener_impl.h>
+#include <libfreenect2/frame_listener.hpp>
+#include <libfreenect2/registration.h>
+#include <libfreenect2/packet_pipeline.h>
+#include <libfreenect2/logger.h>
+
+#define chrono_counter
+
+
 #define camAttachTime 2000
 #define ir_depth_width 512
 #define ir_depth_height 424
@@ -41,84 +30,56 @@
 #define color_height 1080+2
 #define color_bpp 4
 
-class Kinect
+class Kinect : public Camera
 {
 public:
-    Kinect(int id, libfreenect2::Freenect2 *freenect2, libfreenect2::PacketPipeline *pipeline);
-    ~Kinect();
-    void start();
-    void registration();
 
-    void newFrames();
-//    void frames();
-    void frames(std::atomic<bool> &keep_running);
-    void rangedDepth(std::string window_name);
-    void rangedRGBD(std::string window_name);
+    Kinect(libfreenect2::Freenect2 *_freenect, int id);     // kinect object
+    void        start();                                    // kinect start
+    void        registration();                             // kinect register
+    void        frames(std::atomic<bool> & keep_running);   // kinect wrapper to opencv
 
-    void getDepth();
-    void getRangedDepth();
-    void getRGB();
-    void getIr();
-    void getRGBD();
-    void getRangedRGBD();
+    cv::Mat    getRGB();                                    // return opencv mat
+    cv::Mat    getDepth();
+    cv::Mat    getIR();
+    cv::Mat    getRGBD();
 
-    cv::Mat getRGBDFrame();
+    void        cloudData(std::atomic<bool> & keep_running); // kinect wrapper to pcl
+    void        cloudInit();                                // prepare cloud for copying
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr getCloudData();  // return pcl
 
-    void headDetect();
-    void loadCascades();
-    void setCascades(std::string cascade_head, std::string cascade_other, bool load_cascade);
-
-    void cloudInit();
-    void cloudDataThread(std::atomic<bool> & keep_running);
-    void cloudData();
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr getCloudData();
-
-
+    int getId();                                            // return information about camera
     std::string getSerial();
-    std::string getIdString();
+    std::string getCamType();
+    bool lockCloud(int lock_time);
+    void unlockCloud();
 
-    int getId();
-    void depthControl(std::string window_name);
-
-    //variables
-
-    std::timed_mutex cloud_mutex;
+    ~Kinect();
 
 private:
-    std::string serial;
-    int kinect_id;
 
-    libfreenect2::Freenect2Device * dev = nullptr;
-    libfreenect2::Registration * registrated = nullptr;
-    libfreenect2::SyncMultiFrameListener *listener;
+    std::string serial, camera_type;
+    int id=0;
+
+    libfreenect2::PacketPipeline * pPipeline            = nullptr;
+    libfreenect2::Freenect2 * pFreenect                 = nullptr;
+    libfreenect2::Freenect2Device * pDev                = nullptr;
+    libfreenect2::Registration * pRegistrated           = nullptr;
+    libfreenect2::SyncMultiFrameListener * pListener    = nullptr;
     libfreenect2::FrameMap frame;
 
-    libfreenect2::Frame *undistorted = new libfreenect2::Frame(ir_depth_width, ir_depth_height, ir_depth_bpp);
-    libfreenect2::Frame *registered = new libfreenect2::Frame(ir_depth_width, ir_depth_height, ir_depth_bpp);
-    libfreenect2::Frame *depth2rgb = new libfreenect2::Frame(color_width,color_height, color_bpp);
+    libfreenect2::Frame *undistorted    = new libfreenect2::Frame(ir_depth_width, ir_depth_height, ir_depth_bpp);
+    libfreenect2::Frame *registered     = new libfreenect2::Frame(ir_depth_width, ir_depth_height, ir_depth_bpp);
+    libfreenect2::Frame *depth2rgb      = new libfreenect2::Frame(color_width,color_height, color_bpp);
 
-    cv::Mat * depthMat = new cv::Mat( cv::Mat::zeros(424, 512, CV_32FC1) );
-    cv::Mat * rangedDepthMap = new cv::Mat( cv::Mat::zeros(424, 512, CV_32FC1) );
-    cv::Mat * irMat = new cv::Mat( cv::Mat::zeros(424, 512, CV_32FC1) );
-    cv::Mat * colorMat = new cv::Mat( cv::Mat::zeros(1082, 1920, CV_8UC4) );
-    cv::Mat * rgbdMat = new cv::Mat( cv::Mat::zeros(1082, 1920, CV_8UC4) );
-    cv::Mat * rangedRGBDMat = new cv::Mat( cv::Mat::zeros(1082, 1920, CV_8UC4) );
-    cv::Mat * rangeMask = new cv::Mat( cv::Mat::zeros(424, 512, CV_8U) );
-
-    int low_slider=5000;
-    int high_slider=8000;
-    int low_depth_slider = 0;
-    int high_depth_slider=10;
-
-    cv::CascadeClassifier face_cascade;
-    cv::CascadeClassifier eyes_cascade;
-
-    std::string face_cascade_name = "/home/jozef/Documents/QT/3DScan/cascades/haarcascades/haarcascade_profileface.xml";
-    std::string other_cascade_name = "/home/jozef/Documents/QT/3DScan/cascades/haarcascades/haarcascade_eye_tree_eyeglasses.xml";
+    cv::Mat * depthMat          = new cv::Mat( cv::Mat::zeros(424, 512, CV_32FC1) );
+    cv::Mat * irMat             = new cv::Mat( cv::Mat::zeros(424, 512, CV_32FC1) );
+    cv::Mat * colorMat          = new cv::Mat( cv::Mat::zeros(1082, 1920, CV_8UC4) );
+    cv::Mat * rgbdMat           = new cv::Mat( cv::Mat::zeros(1082, 1920, CV_8UC4) );
 
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
-    std::timed_mutex mutex;
 
+    std::timed_mutex cloud_mutex;
 
 };
 #endif // KINECT_H

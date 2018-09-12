@@ -14,7 +14,7 @@ include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
-add_executable(test3 main.cpp kinect.cpp pcl.cpp)
+add_executable(test3 main.cpp camera.cpp kinect.cpp pcl.cpp)
 
 target_link_libraries(test3 ${PCL_LIBRARIES} ${PCL_FILTERS_LIBRARIES} ${OpenCV_LIBRARIES} ${freenect2_LIBRARY} ${CMAKE_THREAD_LIBS_INIT} )
 
