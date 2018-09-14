@@ -10,6 +10,10 @@
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/filters/statistical_outlier_removal.h>
 
+#include <pcl/kdtree/kdtree_flann.h>
+#include <pcl/features/normal_3d.h>
+#include <pcl/surface/gp3.h>
+
 #include <chrono>
 #include <thread>
 
@@ -29,7 +33,7 @@ public:
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr getTransformedCloud();
     void removeOutliers(int meanK, double mulTresh);
     void mergeClouds(std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> clouds);
-
+    void creteMesh(int kSearch);
 
 private:
     int id=0;

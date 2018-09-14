@@ -4,7 +4,7 @@
 #include <exception>
 
 #define minimal_depth 0
-#define maximal_depth 0.7
+#define maximal_depth 0.9
 #define mutex_lock_time 15
 
 Kinect::Kinect(libfreenect2::Freenect2 * _freenect,int _id)
