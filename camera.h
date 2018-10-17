@@ -19,7 +19,9 @@ public:
     virtual int             getId()     = 0;
     virtual std::string     getSerial() = 0;
     virtual bool            lockCloud(int) = 0;
-    virtual void            unlockCloud()   = 0;
+    virtual void            unlockCloud() = 0;
+    virtual void            start() = 0;
+    virtual void            stop() = 0;
 
     virtual void            frames(std::atomic<bool> & keep_running)    = 0;
     virtual void            cloudData(std::atomic<bool> & keep_running) = 0;

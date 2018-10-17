@@ -45,6 +45,12 @@ void Kinect::start()
     this->pDev->start();
 }
 
+void Kinect::stop()
+{
+    std::cout<<"Kinect stop: "<<this->pDev->getSerialNumber()<<std::endl;
+    this->pDev->stop();
+}
+
 void Kinect::registration()
 {
     std::cout<<"Frames registered "<<this->pDev->getSerialNumber()<<std::endl;

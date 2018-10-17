@@ -6,6 +6,7 @@
 
 #include "camera.h"
 #include "kinect.h"
+#include "support.h"
 #include "pcl.h"
 
 
@@ -26,9 +27,9 @@ int main()
 
     libfreenect2::setGlobalLogger(nullptr);
 
-    std::vector<Camera*> connected_cams;                                                 // vector of Camera objects
-    std::vector<std::thread> cam_threads;                                           // vector of threads for image snapping
-    std::vector<std::thread> cloud_threads;                                         // vector of threads for image snapping
+    std::vector<Camera*>        connected_cams;                                            // vector of Camera objects
+    std::vector<std::thread>    cam_threads;                                           // vector of threads for image snapping
+    std::vector<std::thread>    cloud_threads;                                         // vector of threads for cloud computing
 
 
 //! Cameras init
@@ -53,17 +54,19 @@ int main()
 //! Cloud init
 
    // pclViewer cloudViewer(connected_cams.size(),"3D Scan");
-    pclViewer rotationViewer(1,"Rotation 3D Scan");
+    pclViewer rotationViewer(0,"Rotation 3D Scan");
+    std::vector<pclCloud> clouds;                                         // vector of threads for image snapping
 
+    for(auto id=0;id<connected_cams.size();id++)                                        // add connected kinects to vector cams
+    {
+        clouds.push_back(pclCloud(connected_cams[id]->getId(),connected_cams[id]->getSerial()));
+    }
 
-    pclCloud cloud0(connected_cams[0]->getId());
-    pclCloud cloud1(connected_cams[0]->getId());
-    pclCloud cloud2(connected_cams[0]->getId());
     pclCloud merged_cloud(4);
 
+
+
 //! Cloud init
-
-
 
 //! Threads
     std::atomic<bool> snap_running {true};
@@ -71,26 +74,22 @@ int main()
     //threads for snapping images from camera
     for (auto cam_threads_counter=0; cam_threads_counter<connected_cams.size(); cam_threads_counter++)  //run threads with frames function, snapping RGB, Depth, Ir for Kinect
     {
-        std::cout<<cam_threads_counter<<std::endl;
         cam_threads.push_back(std::thread(&Camera::frames,connected_cams[cam_threads_counter],std::ref(snap_running)));
     }
 
     for (auto cam_threads_counter=0; cam_threads_counter<cam_threads.size(); cam_threads_counter++)     //detach threads
     {
-        std::cout<<cam_threads_counter<<std::endl;
         cam_threads[cam_threads_counter].detach();
     }
 
     //threads for computing point clouds
     for (auto cloud_threads_counter=0; cloud_threads_counter<connected_cams.size(); cloud_threads_counter++)  //run threads with frames function, snapping RGB, Depth, Ir for Kinect
     {
-        std::cout<<cloud_threads_counter<<std::endl;
         cloud_threads.push_back(std::thread(&Camera::cloudData,connected_cams[cloud_threads_counter],std::ref(snap_running)));
     }
 
     for (auto cloud_threads_counter=0; cloud_threads_counter<cam_threads.size(); cloud_threads_counter++)     //detach threads
     {
-        std::cout<<cloud_threads_counter<<std::endl;
         cloud_threads[cloud_threads_counter].detach();
     }
 
@@ -99,142 +98,49 @@ int main()
 
 //! Threads
 
-
-
-
-    Eigen::Matrix4f transform_3 = Eigen::Matrix4f::Identity();
-
-    transform_3 (0,0) = 1;
-    transform_3 (0,1) = 0;
-    transform_3 (0,2) = 0;
-    transform_3 (0,3) = 0;
-    transform_3 (1,0) = 0;
-    transform_3 (1,1) = 1;
-    transform_3 (1,2) = 0;
-    transform_3 (1,3) = 0;
-    transform_3 (2,0) = 0;
-    transform_3 (2,1) = 0;
-    transform_3 (2,2) = 1;
-    transform_3 (2,3) = 0;
-    transform_3 (3,0) = 0;
-    transform_3 (3,1) = 0;
-    transform_3 (3,2) = 0;
-    transform_3 (3,3) = 1;
-
-    Eigen::Matrix4f transform_1 = Eigen::Matrix4f::Identity();
-
-    transform_1 (0,0) = 0.052763244201038;
-    transform_1 (0,1) = -0.035140458278675;
-    transform_1 (0,2) = 0.997988571203772;
-    transform_1 (0,3) = 0;
-    transform_1 (1,0) = 0.136014721086955;
-    transform_1 (1,1) = 0.990320072780566;
-    transform_1 (1,2) = 0.027679398395427;
-    transform_1 (1,3) = 0;
-    transform_1 (2,0) = -0.989300781213186;
-    transform_1 (2,1) = 0.134280682303374;
-    transform_1 (2,2) = 0.057032119468952;
-    transform_1 (2,3) = 0;
-    transform_1 (3,0) = 0;
-    transform_1 (3,1) = 0;
-    transform_1 (3,2) = 0;
-    transform_1 (3,3) = 1;
-
-
-    Eigen::Matrix4f transform_2 = Eigen::Matrix4f::Identity();
-
-    transform_2 (0,0) = -0.036101822026987;
-    transform_2 (0,1) = 0.050283996255072;
-    transform_2 (0,2) = -0.998082250201331;
-    transform_2 (0,3) = 0;
-    transform_2 (1,0) = -0.131259860229170;
-    transform_2 (1,1) = 0.989842344147603;
-    transform_2 (1,2) = 0.054616689985734;
-    transform_2 (1,3) = 0;
-    transform_2 (2,0) = 0.990690419626106;
-    transform_2 (2,1) = 0.132979898680210;
-    transform_2 (2,2) = -0.029134841822987;
-    transform_2 (2,3) = 0;
-    transform_2 (3,0) = 0;
-    transform_2 (3,1) = 0;
-    transform_2 (3,2) = 0;
-    transform_2 (3,3) = 1;
-
-
-    cloud0.setTransformationMatrix(transform_1);
-    cloud1.setTransformationMatrix(transform_2);
-    cloud2.setTransformationMatrix(transform_3);
+    std::this_thread::sleep_for(std::chrono::seconds(2));
 
     std::chrono::system_clock::time_point start, stop;
     while(snap_running)
     {
 
-        fmatrix[0]= matrix[0];
-        fmatrix[1]= matrix[1];
-        fmatrix[2]= matrix[2];
-
-        fmatrix[3]= matrix[3];
-        fmatrix[4]= matrix[4];
-        fmatrix[5]= matrix[5];
-
-        transform_1 (0,3) = -fmatrix[0]/1000;
-        transform_1 (1,3) = fmatrix[1]/1000 - fmatrix[1]/500;
-        transform_1 (2,3) = fmatrix[2]/1000;
-
-        transform_2 (0,3) = fmatrix[3]/1000;
-        transform_2 (1,3) = -fmatrix[4]/500 + fmatrix[4]/1000;
-        transform_2 (2,3) = fmatrix[5]/1000;
-
-        cloud0.setTransformationMatrix(transform_1);
-        cloud1.setTransformationMatrix(transform_2);
-
-
-
         start=std::chrono::system_clock::now();
 
-        if(connected_cams[0]->lockCloud(10))
+        for(auto id=0;id<connected_cams.size();id++)
         {
-            cloud0.pclCopyCloud(connected_cams[0]->getCloudData());
-            connected_cams[0]->unlockCloud();
-        } else
-            std::cout<<"daco je zle"<<std::endl;
+            if(connected_cams[id]->lockCloud(10))
+            {
+                clouds[id].pclCopyCloud(connected_cams[id]->getCloudData());
+                connected_cams[id]->unlockCloud();
 
-        if(connected_cams[1]->lockCloud(10))
-        {
-            cloud1.pclCopyCloud(connected_cams[1]->getCloudData());
-            connected_cams[1]->unlockCloud();
-        } else
-            std::cout<<"daco je zle"<<std::endl;
+            } else
+                std::cout<<"daco je zle"<<std::endl;
+        }
 
-        if(connected_cams[2]->lockCloud(10))
-        {
-            cloud2.pclCopyCloud(connected_cams[2]->getCloudData());
-            connected_cams[2]->unlockCloud();
-        } else
-            std::cout<<"daco je zle"<<std::endl;
+//        for(auto id=0;id<connected_cams.size();id++)
+//        {
+//            clouds[id].transformPointCloud();
+//        }
 
 //        cloud1.removeOutliers(10,1.0);
 //        cloud1.removeOutliers(10,1.0);
 //        cloud2.removeOutliers(10,1.0);
 
-//        cloudViewer.pclAddCloud(cloud0.getCloud(),0);
-//        cloudViewer.pclAddCloud(cloud1.getCloud(),1);
-//        cloudViewer.pclAddCloud(cloud2.getCloud(),2);
+        std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> clouds_merge;
 
-        cloud0.transformPointCloud();
-        cloud1.transformPointCloud();
-        cloud2.transformPointCloud();
+        for(auto id=0;id<connected_cams.size();id++)                                        //
+        {
+            if(!clouds[id].getCloud()->empty())
+                clouds_merge.push_back(clouds[id].getTransformedCloud());
+        }
 
-
-
-        std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> clouds;
-        clouds.push_back(cloud0.getTransformedCloud());
-        clouds.push_back(cloud1.getTransformedCloud());
-        clouds.push_back(cloud2.getCloud());
-
-        merged_cloud.mergeClouds(clouds);
+        merged_cloud.mergeClouds(clouds_merge);
         merged_cloud.removeOutliers(20,1.5);
-        rotationViewer.pclAddCloud(merged_cloud.getCloud(),0);
+
+        start=std::chrono::system_clock::now();
+
+        if(!merged_cloud.getCloud()->empty())
+            rotationViewer.pclAddCloud(merged_cloud.getCloud(),0);
 
         //cloudViewer.spinOnce();
         rotationViewer.spinOnce();
@@ -242,9 +148,7 @@ int main()
        stop=std::chrono::system_clock::now();
        std::cout << "Execution Time last:" << std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count() << " ms" << std::endl;
 
-
     }
-
 
     for (int i = 0; i < connected_cams.size(); i++)
     {
@@ -268,10 +172,15 @@ void frames_show(std::vector<Camera*> connected_cams, pclCloud merged_cloud, std
 
         for(auto connected_cams_number=0;connected_cams_number<connected_cams.size();connected_cams_number++)
         {
-//            cv::imshow("Depth_Image" + IntToStr(connected_cams[connected_cams_number]->getId()),(connected_cams[connected_cams_number]->getDepth() / imshow_32to8 ));
-//            cv::imshow("RGB_Image" + IntToStr(connected_cams[connected_cams_number]->getId()),(connected_cams[connected_cams_number]->getRGB()));
-//            cv::imshow("IR_Image" + IntToStr(connected_cams[connected_cams_number]->getId()),(connected_cams[connected_cams_number]->getIR() / imshow_32to8 ));
-//            cv::imshow("RGBD_Image" + IntToStr(connected_cams[connected_cams_number]->getId()),(connected_cams[connected_cams_number]->getRGBD() ));
+
+            cv::imshow("Depth_Image" + IntToStr(connected_cams[connected_cams_number]->getId()),(connected_cams[connected_cams_number]->getDepth() / imshow_32to8 ));
+   //         cv::imshow("RGB_Image" + IntToStr(connected_cams[connected_cams_number]->getId()),(connected_cams[connected_cams_number]->getRGB()));
+            cv::imshow("IR_Image" + IntToStr(connected_cams[connected_cams_number]->getId()),(connected_cams[connected_cams_number]->getIR() / imshow_32to8 ));
+            cv::imshow("RGBD_Image" + IntToStr(connected_cams[connected_cams_number]->getId()),(connected_cams[connected_cams_number]->getRGBD() ));
+
+            cv::moveWindow("Depth_Image" + IntToStr(connected_cams[connected_cams_number]->getId()),ir_depth_width*connected_cams_number+1920,0);
+            cv::moveWindow("RGBD_Image" + IntToStr(connected_cams[connected_cams_number]->getId()),ir_depth_width*connected_cams_number+1920,ir_depth_height);
+            cv::moveWindow("IR_Image" + IntToStr(connected_cams[connected_cams_number]->getId()),ir_depth_width*connected_cams_number,ir_depth_height*2);
         }
 
         auto key = cv::waitKey(15);
@@ -293,6 +202,26 @@ void frames_show(std::vector<Camera*> connected_cams, pclCloud merged_cloud, std
             //    merged_cloud.creteMesh(20);
                 saved_frame_counter++;
                 break;
+
+            case '1':
+                connected_cams[0]->start();
+                break;
+            case '2':
+                connected_cams[1]->start();
+                break;
+            case '3':
+                connected_cams[2]->start();
+                break;
+            case '4':
+                connected_cams[0]->stop();
+                break;
+            case '5':
+                connected_cams[1]->stop();
+                break;
+            case '6':
+                connected_cams[2]->stop();
+                break;
+
          }
         stop=std::chrono::system_clock::now();
 //        cout << "ImVIEWER: " << std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count() << " ms" << endl;

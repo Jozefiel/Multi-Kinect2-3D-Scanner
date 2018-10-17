@@ -9,12 +9,13 @@ find_package(VTK REQUIRED )
 find_package(Threads )
 
 include_directories("/usr/include/libusb-1.0/")
-
+include_directories("config")
+include_directories("cascades")
 include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
-add_executable(test3 main.cpp camera.cpp kinect.cpp pcl.cpp)
+add_executable(test3 main.cpp camera.cpp kinect.cpp pcl.cpp support.cpp)
 
 target_link_libraries(test3 ${PCL_LIBRARIES} ${PCL_FILTERS_LIBRARIES} ${OpenCV_LIBRARIES} ${freenect2_LIBRARY} ${CMAKE_THREAD_LIBS_INIT} )
 
@@ -28,9 +29,6 @@ FIND_PATH(freenect2_INCLUDE_DIR @PROJECT_NAME@/libfreenect2.hpp
     NO_DEFAULT_PATH
 )
 SET(freenect2_INCLUDE_DIRS ${freenect2_INCLUDE_DIR})
-
-
-#${freenect2_LIBS}
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++14")

@@ -1,5 +1,51 @@
 #include "pcl.h"
 
+pclCloud::pclCloud(int cam_id, std::string cam_serial)
+{
+    id=cam_id;
+    serial=cam_serial;
+    try {
+
+        boost::property_tree::ini_parser::read_ini("config/"+cam_serial+".ini", pt);
+
+        transform_matrix (0,0) = pt.get<float>("Calibration.transform_00");
+        transform_matrix (0,1) = pt.get<float>("Calibration.transform_01");
+        transform_matrix (0,2) = pt.get<float>("Calibration.transform_02");
+        transform_matrix (0,3) = pt.get<float>("Calibration.transform_03");
+        transform_matrix (1,0) = pt.get<float>("Calibration.transform_10");
+        transform_matrix (1,1) = pt.get<float>("Calibration.transform_11");
+        transform_matrix (1,2) = pt.get<float>("Calibration.transform_12");
+        transform_matrix (1,3) = pt.get<float>("Calibration.transform_13");
+        transform_matrix (2,0) = pt.get<float>("Calibration.transform_20");
+        transform_matrix (2,1) = pt.get<float>("Calibration.transform_21");
+        transform_matrix (2,2) = pt.get<float>("Calibration.transform_22");
+        transform_matrix (2,3) = pt.get<float>("Calibration.transform_23");
+        transform_matrix (3,0) = pt.get<float>("Calibration.transform_30");
+        transform_matrix (3,1) = pt.get<float>("Calibration.transform_31");
+        transform_matrix (3,2) = pt.get<float>("Calibration.transform_32");
+        transform_matrix (3,3) = pt.get<float>("Calibration.transform_33");
+
+    } catch (int e) {
+        cout << "No init config found for: "<< serial << e <<endl;
+        transform_matrix (0,0) = 1;
+        transform_matrix (0,1) = 0;
+        transform_matrix (0,2) = 0;
+        transform_matrix (0,3) = 0;
+        transform_matrix (1,0) = 0;
+        transform_matrix (1,1) = 1;
+        transform_matrix (1,2) = 0;
+        transform_matrix (1,3) = 0;
+        transform_matrix (2,0) = 0;
+        transform_matrix (2,1) = 0;
+        transform_matrix (2,2) = 1;
+        transform_matrix (2,3) = 0;
+        transform_matrix (3,0) = 0;
+        transform_matrix (3,1) = 0;
+        transform_matrix (3,2) = 0;
+        transform_matrix (3,3) = 1;
+    }
+}
+
 pclCloud::pclCloud(int cam_id)
 {
     id=cam_id;
@@ -35,7 +81,14 @@ void pclCloud::setTransformationMatrix(Eigen::Matrix4f transform)
 
 void pclCloud::transformPointCloud()
 {
-    pcl::transformPointCloud(*cloud,*transformed_cloud,transform_matrix);
+    if(!cloud->empty())
+    {
+        pcl::transformPointCloud(*cloud,*transformed_cloud,transform_matrix,true);
+    }
+    else
+    {
+        std::cout<<"cloud wasn't transformed"<<std::endl;
+    }
 }
 
 void pclCloud::removeOutliers(int meanK, double mulTresh)
@@ -52,13 +105,13 @@ void pclCloud::mergeClouds(std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> c
     cloud->clear();
     for(auto i=0;i<clouds.size();i++)
     {
-        *cloud+=*clouds[i];
+        if(!clouds[i]->empty())
+            *cloud+=*clouds[i];
     }
 }
 
 void pclCloud::creteMesh(int kSearch)
 {
-
         pcl::PointCloud<pcl::PointXYZ>::Ptr tmp_cloud (new pcl::PointCloud<pcl::PointXYZ>);
         copyPointCloud(*cloud, *tmp_cloud);
 
@@ -69,6 +122,7 @@ void pclCloud::creteMesh(int kSearch)
       n.setSearchMethod (tree);
       n.setKSearch (kSearch);
       n.compute (*normals);
+
 
 
       pcl::PointCloud<pcl::PointNormal>::Ptr cloud_with_normals (new pcl::PointCloud<pcl::PointNormal>);
@@ -93,8 +147,6 @@ void pclCloud::creteMesh(int kSearch)
       gp3.setSearchMethod (tree2);
       gp3.reconstruct (triangles);
 }
-
-
 pclCloud::~pclCloud()
 {
 }
@@ -109,12 +161,19 @@ pclViewer::pclViewer(int view_ports, std::string window_name)
         window_name="PCL_Viewer";
     }
     viewer=new pcl::visualization::PCLVisualizer(window_name);
-    double scale_size=(0.99/view_ports);
-    for(int i=0;i<view_ports;i++)
+    if(view_ports==0)
     {
-        int viewPortId (0);
-        viewPortsId.push_back(viewPortId);
-        viewer->createViewPort (scale_size*i,  0.0, scale_size+scale_size*i, 1.0, viewPortsId[i]);
+        std::cout<<"No viewport"<<std::endl;
+    }
+    else
+    {
+        double scale_size=(0.99/view_ports);
+        for(int i=0;i<view_ports;i++)
+        {
+            int viewPortId (0);
+            viewPortsId.push_back(viewPortId);
+            viewer->createViewPort (scale_size*i,  0.0, scale_size+scale_size*i, 1.0, viewPortsId[i]);
+        }
     }
 }
 
@@ -130,12 +189,12 @@ void pclViewer::pclAddCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud0, pcl::
 {
     if(!cloud0->empty() && !cloud0->empty() && !cloud0->empty())
     {
-        viewer->removePointCloud("cloud0");
-        viewer->addPointCloud(cloud0,"cloud0");
-        viewer->removePointCloud("cloud1");
-        viewer->addPointCloud(cloud1,"cloud1");
-        viewer->removePointCloud("cloud2");
-        viewer->addPointCloud(cloud2,"cloud2");
+       // viewer->removePointCloud("cloud0");
+        viewer->updatePointCloud(cloud0,"cloud0");
+      //  viewer->removePointCloud("cloud1");
+        viewer->updatePointCloud(cloud1,"cloud1");
+      //  viewer->removePointCloud("cloud2");
+        viewer->updatePointCloud(cloud2,"cloud2");
     }
 }
 
@@ -146,8 +205,19 @@ void pclViewer::pclAddCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pCloud, int c
     id_string << cam_id;
     if(!pCloud->empty())
     {
-        viewer->removePointCloud("cloud_"+id_string.str());
-        viewer->addPointCloud(pCloud,"cloud_"+id_string.str(),viewPortsId[cam_id]);
+        if(cam_id==0)
+        {
+            if(!viewer->updatePointCloud(pCloud,"cloud_"+id_string.str()))
+            {
+                viewer->removePointCloud("cloud_"+id_string.str());
+                viewer->addPointCloud(pCloud,"cloud_"+id_string.str());
+            }
+        }
+        else
+        {
+            viewer->removePointCloud("cloud_"+id_string.str());
+            viewer->addPointCloud(pCloud,"cloud_"+id_string.str(),viewPortsId[cam_id]);
+        }
     }
 }
 

@@ -36,6 +36,8 @@ public:
 
     Kinect(libfreenect2::Freenect2 *_freenect, int id);     // kinect object
     void        start();                                    // kinect start
+    void        stop();
+
     void        registration();                             // kinect register
     void        frames(std::atomic<bool> & keep_running);   // kinect wrapper to opencv
 

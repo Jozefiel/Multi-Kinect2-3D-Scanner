@@ -16,11 +16,15 @@
 
 #include <chrono>
 #include <thread>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/ini_parser.hpp>
 
 class pclCloud
 {
 public:
+    pclCloud(int cam_id, std::string cam_serial);
     pclCloud(int cam_id);
+
     ~pclCloud();
 
     void pclAddCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud, int);
@@ -37,11 +41,13 @@ public:
 
 private:
     int id=0;
+    std::string serial = "";
 
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
     Eigen::Matrix4f transform_matrix = Eigen::Matrix4f::Identity();
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr transformed_cloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
 
+    boost::property_tree::ptree pt;
 
 };
 
