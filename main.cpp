@@ -26,79 +26,21 @@ int main()
 {
 
     libfreenect2::setGlobalLogger(nullptr);
+    support support;
 
-    std::vector<Camera*>        connected_cams;                                            // vector of Camera objects
-    std::vector<std::thread>    cam_threads;                                           // vector of threads for image snapping
-    std::vector<std::thread>    cloud_threads;                                         // vector of threads for cloud computing
+    support.cameraInit();                                       //! camera init, create connection with Kinects and Realsenses
+    support.threadsInit();                                      //! threads init, detached snapping and cloud computing started
+    support.cloudInit();                                        //! create point cloud for each camera
 
+//  pclViewer cloudViewer(support.connectedCameras(),"3D Scan");   create viewport for each connected camera
 
-//! Cameras init
-//    int connected_realsenses=0;
-//    static int connected_cams;
+    pclViewer rotationViewer(0,"Rotation 3D Scan");             //! create cloud viewer for all cloud connected together
+    pclCloud merged_cloud(4);                                   //! cloud for connected clouds from all cameras
 
-    libfreenect2::Freenect2 * pFreenect2 = new libfreenect2::Freenect2;             // freenect2 init
-
-    int connected_kinects =pFreenect2->enumerateDevices();                          // number of connected kinects
-
-    for(auto id=0;id<connected_kinects;id++)                                        // add connected kinects to vector cams
-    {
-        connected_cams.push_back(Camera::create_camera(pFreenect2, id));
-    }
-
-    /*
-    //  REALSENSE INIT
-    //
-    */
-
-//! Cameras init
-//! Cloud init
-
-   // pclViewer cloudViewer(connected_cams.size(),"3D Scan");
-    pclViewer rotationViewer(0,"Rotation 3D Scan");
-    std::vector<pclCloud> clouds;                                         // vector of threads for image snapping
-
-    for(auto id=0;id<connected_cams.size();id++)                                        // add connected kinects to vector cams
-    {
-        clouds.push_back(pclCloud(connected_cams[id]->getId(),connected_cams[id]->getSerial()));
-    }
-
-    pclCloud merged_cloud(4);
-
-
-
-//! Cloud init
-
-//! Threads
     std::atomic<bool> snap_running {true};
 
-    //threads for snapping images from camera
-    for (auto cam_threads_counter=0; cam_threads_counter<connected_cams.size(); cam_threads_counter++)  //run threads with frames function, snapping RGB, Depth, Ir for Kinect
-    {
-        cam_threads.push_back(std::thread(&Camera::frames,connected_cams[cam_threads_counter],std::ref(snap_running)));
-    }
-
-    for (auto cam_threads_counter=0; cam_threads_counter<cam_threads.size(); cam_threads_counter++)     //detach threads
-    {
-        cam_threads[cam_threads_counter].detach();
-    }
-
-    //threads for computing point clouds
-    for (auto cloud_threads_counter=0; cloud_threads_counter<connected_cams.size(); cloud_threads_counter++)  //run threads with frames function, snapping RGB, Depth, Ir for Kinect
-    {
-        cloud_threads.push_back(std::thread(&Camera::cloudData,connected_cams[cloud_threads_counter],std::ref(snap_running)));
-    }
-
-    for (auto cloud_threads_counter=0; cloud_threads_counter<cam_threads.size(); cloud_threads_counter++)     //detach threads
-    {
-        cloud_threads[cloud_threads_counter].detach();
-    }
-
-    std::thread im_shower(frames_show,connected_cams,merged_cloud,std::ref(snap_running));
-    im_shower.detach();
-
-//! Threads
-
-    std::this_thread::sleep_for(std::chrono::seconds(2));
+  std::thread im_shower(frames_show,support.cameras(),merged_cloud,std::ref(snap_running));
+  im_shower.detach();
 
     std::chrono::system_clock::time_point start, stop;
     while(snap_running)
@@ -106,38 +48,13 @@ int main()
 
         start=std::chrono::system_clock::now();
 
-        for(auto id=0;id<connected_cams.size();id++)
-        {
-            if(connected_cams[id]->lockCloud(10))
-            {
-                clouds[id].pclCopyCloud(connected_cams[id]->getCloudData());
-                connected_cams[id]->unlockCloud();
+        support.camera2cloudDataTransfer();
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        merged_cloud.mergeClouds(support.mergeClouds(false));
 
-            } else
-                std::cout<<"daco je zle"<<std::endl;
-        }
+//        merged_cloud.removeOutliers(20,1.5);
 
-//        for(auto id=0;id<connected_cams.size();id++)
-//        {
-//            clouds[id].transformPointCloud();
-//        }
-
-//        cloud1.removeOutliers(10,1.0);
-//        cloud1.removeOutliers(10,1.0);
-//        cloud2.removeOutliers(10,1.0);
-
-        std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> clouds_merge;
-
-        for(auto id=0;id<connected_cams.size();id++)                                        //
-        {
-            if(!clouds[id].getCloud()->empty())
-                clouds_merge.push_back(clouds[id].getTransformedCloud());
-        }
-
-        merged_cloud.mergeClouds(clouds_merge);
-        merged_cloud.removeOutliers(20,1.5);
-
-        start=std::chrono::system_clock::now();
+//        start=std::chrono::system_clock::now();
 
         if(!merged_cloud.getCloud()->empty())
             rotationViewer.pclAddCloud(merged_cloud.getCloud(),0);
@@ -150,10 +67,10 @@ int main()
 
     }
 
-    for (int i = 0; i < connected_cams.size(); i++)
-    {
-        delete connected_cams[i];
-    }
+//    for (int i = 0; i < connected_cams.size(); i++)
+//    {
+//        delete connected_cams[i];
+//    }
 
     return 0;
 }
@@ -249,19 +166,6 @@ void matrix_rotat_koef()
     cv::createTrackbar( "[3,2]", "Rotation", &matrix[14], MAX_TRESHOLD);
     cv::createTrackbar( "[3,3]", "Rotation", &matrix[15], MAX_TRESHOLD);
 }
-
-//void min_max_cloud()
-//{
-//#define MAX_TRESHOLD 20
-//    namedWindow("Rotation",cv::WINDOW_AUTOSIZE);
-//    cv::createTrackbar( "Cloud_0_min", "Depth_control", &depth_control[0], MAX_TRESHOLD);
-//    cv::createTrackbar( "Cloud_0_max", "Depth_control", &depth_control[1], MAX_TRESHOLD);
-//    cv::createTrackbar( "Cloud_1_min", "Depth_control", &depth_control[2], MAX_TRESHOLD);
-//    cv::createTrackbar( "Cloud_1_max", "Depth_control", &depth_control[3], MAX_TRESHOLD);
-//    cv::createTrackbar( "Cloud_2_min", "Depth_control", &depth_control[4], MAX_TRESHOLD);
-//    cv::createTrackbar( "Cloud_2_max", "Depth_control", &depth_control[5], MAX_TRESHOLD);
-//}
-
 
 std::string IntToStr(int n)
 {
