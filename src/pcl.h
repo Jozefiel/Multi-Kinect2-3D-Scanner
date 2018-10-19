@@ -32,19 +32,22 @@ public:
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr getCloud();
 
 
-    void setTransformationMatrix(Eigen::Matrix4f transform_matrix);
+    void setTransformationMatrix(Eigen::Matrix4d transform);
+    Eigen::Matrix4d getTransformationMatrix();
     void transformPointCloud();
+    void transformPointCloud(Eigen::Matrix4d transform);
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr getTransformedCloud();
     void removeOutliers(int meanK, double mulTresh);
     void mergeClouds(std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> clouds);
     void creteMesh(int kSearch);
 
+
 private:
     int id=0;
     std::string serial = "";
 
+    Eigen::Matrix4d transform_matrix;
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
-    Eigen::Matrix4f transform_matrix = Eigen::Matrix4f::Identity();
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr transformed_cloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
 
     boost::property_tree::ptree pt;

@@ -26,9 +26,12 @@ public:
     void cloudInit();
     void camera2cloudDataTransfer();
     void transformCloud();
+    void transformCloud(std::vector<Eigen::Matrix4d> transform_matrix);
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr getCloudData(int id);
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr getTransformedCloudData(int id);
+    std::vector<pclCloud> getClouds();
     std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> mergeClouds(bool transformed);
+    std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> mergeClouds(bool transformed, std::vector<Eigen::Matrix4d> transform_matrix);
 
 private:
 

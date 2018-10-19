@@ -5,6 +5,7 @@ pclCloud::pclCloud(int cam_id, std::string cam_serial)
     id=cam_id;
     serial=cam_serial;
     try {
+        cout << "pclCloud::pclCloud: config file exist. calibration setted "<< serial<<endl;
 
         boost::property_tree::ini_parser::read_ini("config/"+cam_serial+".ini", pt);
 
@@ -44,6 +45,7 @@ pclCloud::pclCloud(int cam_id, std::string cam_serial)
         transform_matrix (3,2) = 0;
         transform_matrix (3,3) = 1;
     }
+
 }
 
 pclCloud::pclCloud(int cam_id)
@@ -74,9 +76,29 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr pclCloud::getTransformedCloud()
     return transformed_cloud;
 }
 
-void pclCloud::setTransformationMatrix(Eigen::Matrix4f transform)
+void pclCloud::setTransformationMatrix(Eigen::Matrix4d transform)
 {
-   transform_matrix=transform;
+    this->transform_matrix (0,0) = transform (0,0);
+    transform_matrix (0,1) = transform (0,1);
+    transform_matrix (0,2) = transform (0,2);
+    transform_matrix (0,3) = transform (0,3);
+    transform_matrix (1,0) = transform (1,0);
+    transform_matrix (1,1) = transform (1,1);
+    transform_matrix (1,2) = transform (1,2);
+    transform_matrix (1,3) = transform (1,3);
+    transform_matrix (2,0) = transform (2,0);
+    transform_matrix (2,1) = transform (2,1);
+    transform_matrix (2,2) = transform (2,2);
+    transform_matrix (2,3) = transform (2,3);
+    transform_matrix (3,0) = transform (3,0);
+    transform_matrix (3,1) = transform (3,1);
+    transform_matrix (3,2) = transform (3,2);
+    transform_matrix (3,3) = transform (3,3);
+}
+
+Eigen::Matrix4d pclCloud::getTransformationMatrix()
+{
+    return transform_matrix;
 }
 
 void pclCloud::transformPointCloud()
@@ -84,6 +106,18 @@ void pclCloud::transformPointCloud()
     if(!cloud->empty())
     {
         pcl::transformPointCloud(*cloud,*transformed_cloud,transform_matrix,true);
+    }
+    else
+    {
+        std::cout<<"cloud wasn't transformed"<<std::endl;
+    }
+}
+
+void pclCloud::transformPointCloud(Eigen::Matrix4d transform)
+{
+    if(!cloud->empty())
+    {
+        pcl::transformPointCloud(*cloud,*transformed_cloud,transform,true);
     }
     else
     {

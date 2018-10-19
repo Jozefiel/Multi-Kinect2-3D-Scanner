@@ -17,10 +17,11 @@ void frames_show(std::vector<Camera*> connected_cams, pclCloud merged_cloud, std
 void matrix_rotat_koef();
 void min_max_cloud();
 
-int matrix[16]={610,73,690,748,101,737};
+int matrix[16]={0,0,1070,0,0,0,749,0,616};
 //int depth_control[6]={0,0,0,0,0,0};
 
-float fmatrix[16]={0};
+double fmatrix[16]={0};
+int transform_bool=true;
 
 int main()
 {
@@ -39,18 +40,62 @@ int main()
 
     std::atomic<bool> snap_running {true};
 
-  std::thread im_shower(frames_show,support.cameras(),merged_cloud,std::ref(snap_running));
-  im_shower.detach();
+    std::thread im_shower(frames_show,support.cameras(),merged_cloud,std::ref(snap_running));
+    im_shower.detach();
+
+
+    Eigen::Matrix4d transform_0 = support.getClouds()[0].getTransformationMatrix();
+    Eigen::Matrix4d transform_1 = support.getClouds()[1].getTransformationMatrix();
+    Eigen::Matrix4d transform_2 = support.getClouds()[2].getTransformationMatrix();
+
+
 
     std::chrono::system_clock::time_point start, stop;
     while(snap_running)
     {
 
+        fmatrix[0]= matrix[0];
+        fmatrix[1]= matrix[1];
+        fmatrix[2]= matrix[2];
+
+        fmatrix[3]= matrix[3];
+        fmatrix[4]= matrix[4];
+        fmatrix[5]= matrix[5];
+
+        fmatrix[6]= matrix[6];
+        fmatrix[7]= matrix[7];
+        fmatrix[8]= matrix[8];
+
+//        transform_0 (0,3) = -3 + fmatrix[0]/1000;
+//        transform_0 (1,3) = -3 + fmatrix[1]/1000;
+//        transform_0 (2,3) = -3 + fmatrix[2]/1000;
+
+//        transform_1 (0,3) = fmatrix[3]/1000;
+//        transform_1 (1,3) = -fmatrix[4]/500 + fmatrix[4]/1000;
+//        transform_1 (2,3) = fmatrix[5]/1000;
+
+//        transform_2 (0,3) = fmatrix[6]/1000;
+//        transform_2 (1,3) = -fmatrix[7]/500 + fmatrix[7]/1000;
+//        transform_2 (2,3) = fmatrix[8]/1000;
+
+//        std::cout<<transform_0<<" "<<endl;
+//        std::cout<<transform_1<<" "<<endl;
+//        std::cout<<transform_2<<" "<<endl;
+
+        support.getClouds()[0].setTransformationMatrix(transform_0);
+        support.getClouds()[1].setTransformationMatrix(transform_1);
+        support.getClouds()[2].setTransformationMatrix(transform_2);
+
+        std::vector<Eigen::Matrix4d> transform_matrix;
+        transform_matrix.push_back(transform_0);
+        transform_matrix.push_back(transform_1);
+        transform_matrix.push_back(transform_2);
+
         start=std::chrono::system_clock::now();
 
         support.camera2cloudDataTransfer();
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
-        merged_cloud.mergeClouds(support.mergeClouds(false));
+        merged_cloud.mergeClouds(support.mergeClouds(transform_bool,transform_matrix));
 
 //        merged_cloud.removeOutliers(20,1.5);
 
@@ -63,7 +108,7 @@ int main()
         rotationViewer.spinOnce();
 
        stop=std::chrono::system_clock::now();
-       std::cout << "Execution Time last:" << std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count() << " ms" << std::endl;
+  //     std::cout << "Execution Time last:" << std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count() << " ms" << std::endl;
 
     }
 
@@ -113,9 +158,13 @@ void frames_show(std::vector<Camera*> connected_cams, pclCloud merged_cloud, std
             case 'W':
                 for(auto i=0;i<connected_cams.size();i++)
                 {
-                    cv::imwrite("RGBD_"+IntToStr(connected_cams[i]->getId()) +"_" +IntToStr(saved_frame_counter)+".jpeg",connected_cams[i]->getRGBD());
+                    cv::imwrite("output/"+IntToStr(connected_cams[i]->getId())+"/RGBD/RGBD_" +IntToStr(saved_frame_counter)+".jpeg",connected_cams[i]->getRGBD());
+                    cv::imwrite("output/"+IntToStr(connected_cams[i]->getId())+"/DEPTH/DEPTH_" +IntToStr(saved_frame_counter)+".jpeg",connected_cams[i]->getDepth() );
+                    cv::imwrite("output/"+IntToStr(connected_cams[i]->getId())+"/RGB/RGB_" +IntToStr(saved_frame_counter)+".jpeg",connected_cams[i]->getRGB());
+                    cv::imwrite("output/"+IntToStr(connected_cams[i]->getId())+"/IR/IR_" +IntToStr(saved_frame_counter)+".jpeg",connected_cams[i]->getIR() );
                 }
-                pcl::io::savePLYFile("clouds.ply",*merged_cloud.getCloud());
+                merged_cloud.removeOutliers(20,1.5);
+                pcl::io::savePLYFile("output/CLOUDS/cloud_"+IntToStr(saved_frame_counter)+".ply",*merged_cloud.getCloud());
             //    merged_cloud.creteMesh(20);
                 saved_frame_counter++;
                 break;
@@ -165,6 +214,7 @@ void matrix_rotat_koef()
     cv::createTrackbar( "[3,1]", "Rotation", &matrix[13], MAX_TRESHOLD);
     cv::createTrackbar( "[3,2]", "Rotation", &matrix[14], MAX_TRESHOLD);
     cv::createTrackbar( "[3,3]", "Rotation", &matrix[15], MAX_TRESHOLD);
+    cv::createTrackbar( "rotat", "Rotation", &transform_bool, 1);
 }
 
 std::string IntToStr(int n)
