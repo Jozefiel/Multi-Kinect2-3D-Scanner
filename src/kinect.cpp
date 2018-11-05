@@ -32,6 +32,7 @@ Kinect::Kinect(libfreenect2::Freenect2 * _freenect,int _id)
 
         this->start();
         this->registration();
+        this->loadCamParams();
     }
     catch (std::exception& e)
     {
@@ -96,6 +97,23 @@ std::string Kinect::getCamType()
     return camera_type;
 }
 
+void Kinect::loadCamParams()
+{
+    try {
+        std::cout << "Kinect::loadCamParams "<< serial<<std::endl;
+
+        boost::property_tree::ini_parser::read_ini("config/"+serial+".ini", pt);
+
+        calib_params.cx = pt.get<float>("Calibration.transform_rgb_cx");
+        calib_params.cy = pt.get<float>("Calibration.transform_rgb_cy");
+        calib_params.fx = pt.get<float>("Calibration.transform_rgb_fx");
+        calib_params.fy = pt.get<float>("Calibration.transform_rgb_fy");
+
+    } catch (int e) {
+
+    }
+}
+
 cv::Mat Kinect::getRGB()
 {
     return *colorMat;
@@ -150,18 +168,27 @@ void Kinect::cloudData(std::atomic<bool> & keep_running)
                 uint8_t g = p[1];
                 uint8_t r = p[2];
 
-                if(std::isinf(x) || std::isinf(y) ||  std::isinf(z) )
+                if((r<150 && b <150 && g<150) || (r >10 && b >10 && g >10) )
                 {
-                    x=NAN;
-                    z=NAN;
-                    y=NAN;
-                } else if ( z > (double) maximal_depth )
+                    if(std::isinf(x) || std::isinf(y) ||  std::isinf(z) )
+                    {
+                        x=NAN;
+                        z=NAN;
+                        y=NAN;
+                    }
+                    else if ( z > static_cast<float>(maximal_depth) )
+                    {
+                        x=NAN;
+                        z=NAN;
+                        y=NAN;
+                    }
+                }
+                else
                 {
                     x=NAN;
                     z=NAN;
                     y=NAN;
                 }
-
 
                 tmpCloud->points[n].x=x;
                 tmpCloud->points[n].y=y;

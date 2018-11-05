@@ -146,41 +146,25 @@ void pclCloud::mergeClouds(std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> c
 
 void pclCloud::creteMesh(int kSearch)
 {
-        pcl::PointCloud<pcl::PointXYZ>::Ptr tmp_cloud (new pcl::PointCloud<pcl::PointXYZ>);
-        copyPointCloud(*cloud, *tmp_cloud);
+      pcl::PointCloud<pcl::PointXYZ>::Ptr tmp_cloud (new pcl::PointCloud<pcl::PointXYZ>);
+      copyPointCloud(*cloud, *tmp_cloud);
 
-      pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> n;
-      pcl::PointCloud<pcl::Normal>::Ptr normals (new pcl::PointCloud<pcl::Normal>);
+      pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> normal_estimation;
+      normal_estimation.setInputCloud(tmp_cloud);
+
       pcl::search::KdTree<pcl::PointXYZ>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZ>);
-      tree->setInputCloud(tmp_cloud);
-      n.setSearchMethod (tree);
-      n.setKSearch (kSearch);
-      n.compute (*normals);
+      normal_estimation.setSearchMethod(tree);
+
+      pcl::PointCloud<pcl::Normal>::Ptr cloud_normals (new pcl::PointCloud<pcl::Normal>);
+      normal_estimation.setRadiusSearch(0.03);
+
+      normal_estimation.compute(*cloud_normals);
+      pcl::io::savePCDFile("cloud_normals.pcd",*cloud_normals);
+      pcl::io::savePLYFile("cloud_normals.ply",*cloud_normals);
 
 
-
-      pcl::PointCloud<pcl::PointNormal>::Ptr cloud_with_normals (new pcl::PointCloud<pcl::PointNormal>);
-      pcl::concatenateFields (*tmp_cloud, *normals, *cloud_with_normals);
-
-      pcl::search::KdTree<pcl::PointNormal>::Ptr tree2 (new pcl::search::KdTree<pcl::PointNormal>);
-      tree2->setInputCloud (cloud_with_normals);
-
-      pcl::GreedyProjectionTriangulation<pcl::PointNormal> gp3;
-      pcl::PolygonMesh triangles;
-
-      gp3.setSearchRadius (0.025);
-
-      gp3.setMu (2.5);
-      gp3.setMaximumNearestNeighbors (100);
-      gp3.setMaximumSurfaceAngle(M_PI/4); // 45 degrees
-      gp3.setMinimumAngle(M_PI/18); // 10 degrees
-      gp3.setMaximumAngle(2*M_PI/3); // 120 degrees
-      gp3.setNormalConsistency(false);
-
-      gp3.setInputCloud (cloud_with_normals);
-      gp3.setSearchMethod (tree2);
-      gp3.reconstruct (triangles);
 }
+
 pclCloud::~pclCloud()
 {
 }

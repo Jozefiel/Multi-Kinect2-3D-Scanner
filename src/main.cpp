@@ -16,6 +16,8 @@ std::string IntToStr(int n);
 void frames_show(std::vector<Camera*> connected_cams, pclCloud merged_cloud, std::atomic<bool> & snap_running);
 void matrix_rotat_koef();
 void min_max_cloud();
+void saveLUT(cv::Mat in, char const* filename);
+
 
 int matrix[16]={0,0,1070,0,0,0,749,0,616};
 //int depth_control[6]={0,0,0,0,0,0};
@@ -54,33 +56,33 @@ int main()
     while(snap_running)
     {
 
-        fmatrix[0]= matrix[0];
-        fmatrix[1]= matrix[1];
-        fmatrix[2]= matrix[2];
+//        fmatrix[0]= matrix[0];
+//        fmatrix[1]= matrix[1];
+//        fmatrix[2]= matrix[2];
 
-        fmatrix[3]= matrix[3];
-        fmatrix[4]= matrix[4];
-        fmatrix[5]= matrix[5];
+//        fmatrix[3]= matrix[3];
+//        fmatrix[4]= matrix[4];
+//        fmatrix[5]= matrix[5];
 
-        fmatrix[6]= matrix[6];
-        fmatrix[7]= matrix[7];
-        fmatrix[8]= matrix[8];
+//        fmatrix[6]= matrix[6];
+//        fmatrix[7]= matrix[7];
+//        fmatrix[8]= matrix[8];
 
-//        transform_0 (0,3) = -3 + fmatrix[0]/1000;
-//        transform_0 (1,3) = -3 + fmatrix[1]/1000;
-//        transform_0 (2,3) = -3 + fmatrix[2]/1000;
+////        transform_0 (0,3) = -3 + fmatrix[0]/1000;
+////        transform_0 (1,3) = -3 + fmatrix[1]/1000;
+////        transform_0 (2,3) = -3 + fmatrix[2]/1000;
 
-//        transform_1 (0,3) = fmatrix[3]/1000;
-//        transform_1 (1,3) = -fmatrix[4]/500 + fmatrix[4]/1000;
-//        transform_1 (2,3) = fmatrix[5]/1000;
+////        transform_1 (0,3) = fmatrix[3]/1000;
+////        transform_1 (1,3) = -fmatrix[4]/500 + fmatrix[4]/1000;
+////        transform_1 (2,3) = fmatrix[5]/1000;
 
-//        transform_2 (0,3) = fmatrix[6]/1000;
-//        transform_2 (1,3) = -fmatrix[7]/500 + fmatrix[7]/1000;
-//        transform_2 (2,3) = fmatrix[8]/1000;
+////        transform_2 (0,3) = fmatrix[6]/1000;
+////        transform_2 (1,3) = -fmatrix[7]/500 + fmatrix[7]/1000;
+////        transform_2 (2,3) = fmatrix[8]/1000;
 
-//        std::cout<<transform_0<<" "<<endl;
-//        std::cout<<transform_1<<" "<<endl;
-//        std::cout<<transform_2<<" "<<endl;
+////        std::cout<<transform_0<<" "<<endl;
+////        std::cout<<transform_1<<" "<<endl;
+////        std::cout<<transform_2<<" "<<endl;
 
         support.getClouds()[0].setTransformationMatrix(transform_0);
         support.getClouds()[1].setTransformationMatrix(transform_1);
@@ -95,7 +97,7 @@ int main()
 
         support.camera2cloudDataTransfer();
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
-        merged_cloud.mergeClouds(support.mergeClouds(transform_bool,transform_matrix));
+        merged_cloud.mergeClouds(support.mergeClouds(transform_bool));
 
 //        merged_cloud.removeOutliers(20,1.5);
 
@@ -136,7 +138,7 @@ void frames_show(std::vector<Camera*> connected_cams, pclCloud merged_cloud, std
         {
 
             cv::imshow("Depth_Image" + IntToStr(connected_cams[connected_cams_number]->getId()),(connected_cams[connected_cams_number]->getDepth() / imshow_32to8 ));
-   //         cv::imshow("RGB_Image" + IntToStr(connected_cams[connected_cams_number]->getId()),(connected_cams[connected_cams_number]->getRGB()));
+//            cv::imshow("RGB_Image" + IntToStr(connected_cams[connected_cams_number]->getId()),(connected_cams[connected_cams_number]->getRGB()));
             cv::imshow("IR_Image" + IntToStr(connected_cams[connected_cams_number]->getId()),(connected_cams[connected_cams_number]->getIR() / imshow_32to8 ));
             cv::imshow("RGBD_Image" + IntToStr(connected_cams[connected_cams_number]->getId()),(connected_cams[connected_cams_number]->getRGBD() ));
 
@@ -158,15 +160,17 @@ void frames_show(std::vector<Camera*> connected_cams, pclCloud merged_cloud, std
             case 'W':
                 for(auto i=0;i<connected_cams.size();i++)
                 {
+
                     cv::imwrite("output/"+IntToStr(connected_cams[i]->getId())+"/RGBD/RGBD_" +IntToStr(saved_frame_counter)+".jpeg",connected_cams[i]->getRGBD());
                     cv::imwrite("output/"+IntToStr(connected_cams[i]->getId())+"/DEPTH/DEPTH_" +IntToStr(saved_frame_counter)+".jpeg",connected_cams[i]->getDepth() );
                     cv::imwrite("output/"+IntToStr(connected_cams[i]->getId())+"/RGB/RGB_" +IntToStr(saved_frame_counter)+".jpeg",connected_cams[i]->getRGB());
                     cv::imwrite("output/"+IntToStr(connected_cams[i]->getId())+"/IR/IR_" +IntToStr(saved_frame_counter)+".jpeg",connected_cams[i]->getIR() );
+                    saveLUT(connected_cams[i]->getDepth(),"test/image.png");
                 }
-                merged_cloud.removeOutliers(20,1.5);
+                merged_cloud.removeOutliers(10,1.5);
                 pcl::io::savePLYFile("output/CLOUDS/cloud_"+IntToStr(saved_frame_counter)+".ply",*merged_cloud.getCloud());
-            //    merged_cloud.creteMesh(20);
-                saved_frame_counter++;
+////                merged_cloud.creteMesh(10);
+//                saved_frame_counter++;
                 break;
 
             case '1':
@@ -186,6 +190,20 @@ void frames_show(std::vector<Camera*> connected_cams, pclCloud merged_cloud, std
                 break;
             case '6':
                 connected_cams[2]->stop();
+                break;
+            case '7':
+                connected_cams[1]->stop();
+                connected_cams[2]->stop();
+
+                connected_cams[0]->start();
+                connected_cams[0]->stop();
+
+                connected_cams[1]->start();
+                connected_cams[1]->stop();
+
+                connected_cams[2]->start();
+                connected_cams[2]->stop();
+
                 break;
 
          }
@@ -224,5 +242,45 @@ std::string IntToStr(int n)
     return result.str();
 }
 
+void saveLUT(cv::Mat in, char const* filename)
+{
+#define ir_depth_width 512
+#define ir_depth_height 424
+    int i,j;
 
+    cv::Mat c1(cv::Size(ir_depth_width,ir_depth_height), CV_8UC1);
+    cv::Mat c2(cv::Size(ir_depth_width,ir_depth_height), CV_8UC1);
+    cv::Mat c3(cv::Size(ir_depth_width,ir_depth_height), CV_8UC1);
+    cv::Mat c4(cv::Size(ir_depth_width,ir_depth_height), CV_8UC1);
+
+    for(i = 0; i < in.cols; i++)
+    {
+        for(j = 0; j < in.rows; j++)
+        {
+            float orig = in.at<float>(j,i);
+
+            uint32_t orig_int = orig*(256.0*256.0*256.0-1);
+            c1.at<uint8_t>(j,i) = (uint8_t)((orig_int&0xFF000000) >> 24);
+            c2.at<uint8_t>(j,i) = (uint8_t)((orig_int&0x00FF0000) >> 16);
+            c3.at<uint8_t>(j,i) = (uint8_t)((orig_int&0x0000FF00) >> 8);
+            c4.at<uint8_t>(j,i) = (uint8_t)((orig_int&0x000000FF));
+        }
+    }
+
+    std::vector<cv::Mat> channels;
+    channels.push_back(c1);
+    channels.push_back(c2);
+    channels.push_back(c3);
+    channels.push_back(c4);
+    cv::Mat out;
+    merge(channels, out);
+    imwrite("test/test1.png", c1);
+    imwrite("test/test2.png", c2);
+    imwrite("test/test3.png", c3);
+    imwrite("test/test4.png", c4);
+    imwrite(filename, out);
+
+    cv::Mat encoded(cv::Size(ir_depth_width,ir_depth_height), CV_8UC4);
+
+}
 

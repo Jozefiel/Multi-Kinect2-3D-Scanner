@@ -53,6 +53,9 @@ public:
     int getId();                                            // return information about camera
     std::string getSerial();
     std::string getCamType();
+    void loadCamParams();
+
+
     bool lockCloud(int lock_time);
     void unlockCloud();
 
@@ -81,7 +84,9 @@ private:
 
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
 
+    boost::property_tree::ptree pt;
     std::timed_mutex cloud_mutex;
+    libfreenect2::Freenect2Device::ColorCameraParams calib_params;
 
 };
 #endif // KINECT_H
