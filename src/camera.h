@@ -21,21 +21,31 @@ public:
 
     virtual int             getId()     = 0;
     virtual std::string     getSerial() = 0;
-    virtual bool            lockCloud(int) = 0;
-    virtual void            unlockCloud() = 0;
+    virtual bool            lockCloud(int)  = 0;
+    virtual void            unlockCloud()   = 0;
+
+    virtual bool            lockFrames(int) = 0;
+    virtual void            unlockFrames()  = 0;
+
     virtual void            start() = 0;
     virtual void            stop() = 0;
 
     virtual void            frames(std::atomic<bool> & keep_running)    = 0;
-    virtual void            cloudData(std::atomic<bool> & keep_running) = 0;
+    virtual void            cloudData(std::atomic<bool> & keep_running, std::atomic<bool> & compute_cloud_style) = 0;
 
     virtual std::string     getCamType()    = 0;
-    virtual void            loadCamParams()  = 0;
+    virtual void            loadCamParams() = 0;
 
     virtual cv::Mat         getRGB()        = 0;
     virtual cv::Mat         getDepth()      = 0;
     virtual cv::Mat         getIR()         = 0;
     virtual cv::Mat         getRGBD()       = 0;
+
+    virtual cv::Mat         getMask()       = 0;
+    virtual cv::Mat         getRangedRGBD() = 0;
+    virtual cv::Mat         getRangedDepth()    = 0;
+
+
     virtual pcl::PointCloud<pcl::PointXYZRGB>::Ptr getCloudData()   = 0;
 
 

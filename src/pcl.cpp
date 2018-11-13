@@ -50,6 +50,7 @@ pclCloud::pclCloud(int cam_id, std::string cam_serial)
 
 pclCloud::pclCloud(int cam_id)
 {
+    cout << "pclCloud::pclCloud: created cloud without calibration parameters "<< serial<<endl;
     id=cam_id;
 }
 
@@ -192,6 +193,7 @@ pclViewer::pclViewer(int view_ports, std::string window_name)
             viewPortsId.push_back(viewPortId);
             viewer->createViewPort (scale_size*i,  0.0, scale_size+scale_size*i, 1.0, viewPortsId[i]);
         }
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 }
 

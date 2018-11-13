@@ -40,6 +40,16 @@ Kinect::Kinect(libfreenect2::Freenect2 * _freenect,int _id)
     }
 }
 
+int Kinect::getId()
+{
+    return id;
+}
+
+std::string Kinect::getSerial()
+{
+    return serial;
+}
+
 void Kinect::start()
 {
     std::cout<<"Kinect start: "<<this->pDev->getSerialNumber()<<std::endl;
@@ -104,10 +114,10 @@ void Kinect::loadCamParams()
 
         boost::property_tree::ini_parser::read_ini("config/"+serial+".ini", pt);
 
-        calib_params.cx = pt.get<float>("Calibration.transform_rgb_cx");
-        calib_params.cy = pt.get<float>("Calibration.transform_rgb_cy");
-        calib_params.fx = pt.get<float>("Calibration.transform_rgb_fx");
-        calib_params.fy = pt.get<float>("Calibration.transform_rgb_fy");
+        rgb_calib_params.cx = pt.get<float>("Calibration.transform_rgb_cx");
+        rgb_calib_params.cy = pt.get<float>("Calibration.transform_rgb_cy");
+        rgb_calib_params.fx = pt.get<float>("Calibration.transform_rgb_fx");
+        rgb_calib_params.fy = pt.get<float>("Calibration.transform_rgb_fy");
 
     } catch (int e) {
 
@@ -134,6 +144,26 @@ cv::Mat Kinect::getRGBD()
     return *rgbdMat;
 }
 
+cv::Mat Kinect::getMask()
+{
+    return *mask;
+}
+
+cv::Mat Kinect::getRangedRGBD()
+{
+    return *rangedRGBDMat;
+}
+
+cv::Mat Kinect::getRangedDepth()
+{
+    return *rangedDepthMat;
+}
+
+pcl::PointCloud<pcl::PointXYZRGB>::Ptr Kinect::getCloudData()
+{
+    return cloud;
+}
+
 void Kinect::cloudInit()
 {
     cloud->clear();
@@ -143,7 +173,23 @@ void Kinect::cloudInit()
     cloud->points.resize( cloud->width * cloud->height);
 }
 
-void Kinect::cloudData(std::atomic<bool> & keep_running)
+void Kinect::rangeFrames(int lowTreshold,int highTreshold)
+{
+    rangedDepthMat->release();
+    rangedRGBDMat->release();
+    cv::Mat *tmpDepthMat=new cv::Mat(*depthMat);
+    cv::Mat *tmpRGBDMat=new cv::Mat(*rgbdMat);
+
+    tmpRGBDMat->convertTo(*tmpRGBDMat,CV_8UC3);
+    cv::cvtColor(*tmpRGBDMat,*tmpRGBDMat,CV_RGBA2RGB);
+
+    cv::inRange(*tmpDepthMat,lowTreshold,highTreshold,*mask);
+
+    tmpDepthMat->copyTo(*rangedDepthMat,*mask);
+    tmpRGBDMat->copyTo(*rangedRGBDMat);
+}
+
+void Kinect::cloudData(std::atomic<bool> & keep_running, std::atomic<bool> & compute_cloud_style )
 {
     std::chrono::system_clock::time_point then, now;
     while(keep_running)
@@ -154,55 +200,12 @@ void Kinect::cloudData(std::atomic<bool> & keep_running)
         tmpCloud->height = static_cast<uint32_t>(ir_depth_height);
         tmpCloud->is_dense = false;
         tmpCloud->points.resize( tmpCloud->width* tmpCloud->height);
-        float x=0, y=0, z=0;
-        unsigned long n=0;
 
-        for(int x_side=0;x_side<ir_depth_width;x_side++)
-        {
-            for(int y_side=0;y_side<ir_depth_height;y_side++)
-            {
-                float rgb;
-                pRegistrated->getPointXYZRGB(undistorted,registered,y_side,x_side,x,y,z,rgb);
-                const uint8_t *p = reinterpret_cast<uint8_t*>(&rgb);
-                uint8_t b = p[0];
-                uint8_t g = p[1];
-                uint8_t r = p[2];
+        if(compute_cloud_style==false)
+            this->registered2cloud(tmpCloud);
+        else
+            this->depth2cloud(tmpCloud);
 
-                if((r<150 && b <150 && g<150) || (r >10 && b >10 && g >10) )
-                {
-                    if(std::isinf(x) || std::isinf(y) ||  std::isinf(z) )
-                    {
-                        x=NAN;
-                        z=NAN;
-                        y=NAN;
-                    }
-                    else if ( z > static_cast<float>(maximal_depth) )
-                    {
-                        x=NAN;
-                        z=NAN;
-                        y=NAN;
-                    }
-                }
-                else
-                {
-                    x=NAN;
-                    z=NAN;
-                    y=NAN;
-                }
-
-                tmpCloud->points[n].x=x;
-                tmpCloud->points[n].y=y;
-                tmpCloud->points[n].z=z;
-                tmpCloud->points[n].r=r;
-                tmpCloud->points[n].g=g;
-                tmpCloud->points[n].b=b;
-
-                n++;
-            }
-        }
-
-        std::vector<int> removedPoints;
-        pcl::removeNaNFromPointCloud(*tmpCloud,*tmpCloud,removedPoints);
 
         if(!tmpCloud->empty())
         {
@@ -219,19 +222,103 @@ void Kinect::cloudData(std::atomic<bool> & keep_running)
     }
 }
 
-pcl::PointCloud<pcl::PointXYZRGB>::Ptr Kinect::getCloudData()
+
+
+void Kinect::registered2cloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &tmpCloud)
 {
-    return cloud;
+    float x=0, y=0, z=0;
+    unsigned long n=0;
+    for(int x_side=0;x_side<ir_depth_width;x_side++)
+    {
+        for(int y_side=0;y_side<ir_depth_height;y_side++)
+        {
+            float rgb;
+            pRegistrated->getPointXYZRGB(undistorted,registered,y_side,x_side,x,y,z,rgb);
+            const uint8_t *p = reinterpret_cast<uint8_t*>(&rgb);
+            uint8_t b = p[0];
+            uint8_t g = p[1];
+            uint8_t r = p[2];
+
+            if((r<150 && b <150 && g<150) || (r >10 && b >10 && g >10) )
+            {
+                if(std::isinf(x) || std::isinf(y) ||  std::isinf(z) )
+                {
+                    x=NAN;
+                    z=NAN;
+                    y=NAN;
+                }
+                else if ( z > static_cast<float>(maximal_depth) )
+                {
+                    x=NAN;
+                    z=NAN;
+                    y=NAN;
+                }
+            }
+            else
+            {
+                x=NAN;
+                z=NAN;
+                y=NAN;
+            }
+
+            tmpCloud->points[n].x=x;
+            tmpCloud->points[n].y=y;
+            tmpCloud->points[n].z=z;
+            tmpCloud->points[n].r=r;
+            tmpCloud->points[n].g=g;
+            tmpCloud->points[n].b=b;
+
+            n++;
+        }
+    }
+    std::vector<int> removedPoints;
+    pcl::removeNaNFromPointCloud(*tmpCloud,*tmpCloud,removedPoints);
 }
 
-int Kinect::getId()
-{
-    return id;
-}
 
-std::string Kinect::getSerial()
+void Kinect::depth2cloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &tmpCloud)
 {
-    return serial;
+
+    double fy = 3.551063664968910e+02;
+    double fx = 3.714166846959092e+02;
+    double cy = 1.675200071820351e+02;
+    double cx = 2.473181663244050e+02;
+
+    rangeFrames(50,800);
+
+    uint32_t n=0;
+    double x=0, y=0, z=0;
+
+    for (int y_side = 0; y_side < ir_depth_width; y_side++)
+    {
+        for (int x_side = 0; x_side < ir_depth_height; x_side++)
+        {
+            float Z = this->rangedDepthMat->at<float>(x_side, y_side) / 1;
+            if(Z>0)
+            {
+                x=(x_side-cx)*Z/fx;
+                y=(y_side-cy)*Z/fy;
+                z=Z;
+            }
+            else
+            {
+                x=NAN;
+                y=NAN;
+                z=NAN;
+            }
+
+            tmpCloud->points[n].x=x;
+            tmpCloud->points[n].y=y;
+            tmpCloud->points[n].z=z;
+            tmpCloud->points[n].r=this->rangedRGBDMat->at<cv::Vec3b>(x_side,y_side)[2];
+            tmpCloud->points[n].g=this->rangedRGBDMat->at<cv::Vec3b>(x_side,y_side)[1];
+            tmpCloud->points[n].b=this->rangedRGBDMat->at<cv::Vec3b>(x_side,y_side)[0];
+            n++;
+        }
+    }
+
+    std::vector<int> removedPoints;
+    pcl::removeNaNFromPointCloud(*tmpCloud,*tmpCloud,removedPoints);
 }
 
 bool Kinect::lockCloud(int lock_time)
@@ -245,6 +332,19 @@ bool Kinect::lockCloud(int lock_time)
 void Kinect::unlockCloud()
 {
     cloud_mutex.unlock();
+}
+
+bool Kinect::lockFrames(int lock_time)
+{
+    if(frame_mutex.try_lock_for(std::chrono::milliseconds(lock_time)))
+        return true;
+    else
+        return false;
+}
+
+void Kinect::unlockFrames()
+{
+    frame_mutex.unlock();
 }
 
 Kinect::~Kinect()

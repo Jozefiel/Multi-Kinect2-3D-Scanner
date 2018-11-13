@@ -70,7 +70,7 @@ void support::threadComputePointCloud()
 {
     for (auto cloud_threads_counter=0; cloud_threads_counter<this->connectedCameras(); cloud_threads_counter++)  //run threads with frames function, snapping RGB, Depth, Ir for Kinect
     {
-        cloud_threads.push_back(std::thread(&Camera::cloudData,this->cameras()[cloud_threads_counter],std::ref(snap_running)));
+        cloud_threads.push_back(std::thread(&Camera::cloudData,this->cameras()[cloud_threads_counter],std::ref(snap_running),std::ref(compute_cloud_style)));
     }
 
     for (auto cloud_threads_counter=0; cloud_threads_counter<this->connectedCameras(); cloud_threads_counter++)     //detach threads
@@ -88,6 +88,8 @@ void support::cloudInit()
     {
         this->clouds.push_back(pclCloud(this->cameras()[id]->getId(),this->cameras()[id]->getSerial()));
     }
+    std::cout<<"support::cloudInit started"<<std::endl;
+
 }
 
 std::vector<pclCloud> support::getClouds()
