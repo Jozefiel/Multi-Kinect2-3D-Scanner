@@ -82,7 +82,6 @@ void Kinect::frames(std::atomic<bool> & keep_running)
             libfreenect2::Frame *depth=frame[libfreenect2::Frame::Depth];
             libfreenect2::Frame *ir=frame[libfreenect2::Frame::Ir];
             libfreenect2::Frame *rgb=frame[libfreenect2::Frame::Color];
-
             cv::Mat(depth->height, depth->width, CV_32FC1, depth->data).copyTo(*this->depthMat);
             cv::Mat(ir->height, ir->width, CV_32FC1, ir->data).copyTo(*this->irMat);
             cv::Mat(rgb->height, rgb->width, CV_8UC4, rgb->data).copyTo(*this->colorMat);
@@ -90,8 +89,8 @@ void Kinect::frames(std::atomic<bool> & keep_running)
             this->pRegistrated->apply(rgb,depth, this->undistorted, this->registered,true, this->depth2rgb);
             cv::Mat( this->registered->height,  this->registered->width, CV_8UC4, registered->data).copyTo(* this->rgbdMat);
 
-            now=std::chrono::system_clock::now();
-//            std::cout << "Snapping: "<<this->id<<" "<< std::chrono::duration_cast<std::chrono::milliseconds>(now - then).count() << " ms" << std::endl;
+            //now=std::chrono::system_clock::now();
+  //          std::cout << "Snapping: "<<this->id<<" "<< std::chrono::duration_cast<std::chrono::milliseconds>(now - then).count() << " ms" << std::endl;
 
             pListener->release(frame);
         }
@@ -187,6 +186,11 @@ void Kinect::rangeFrames(int lowTreshold,int highTreshold)
 
     tmpDepthMat->copyTo(*rangedDepthMat,*mask);
     tmpRGBDMat->copyTo(*rangedRGBDMat);
+
+    tmpDepthMat->release();
+    tmpRGBDMat->release();
+    delete tmpDepthMat;
+    delete tmpRGBDMat;
 }
 
 void Kinect::cloudData(std::atomic<bool> & keep_running, std::atomic<bool> & compute_cloud_style )
