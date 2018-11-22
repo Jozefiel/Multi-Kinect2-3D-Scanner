@@ -17,7 +17,7 @@ std::string IntToStr(int n);
 void frames_show(std::vector<Camera*> connected_cams, pclCloud merged_cloud, std::atomic<bool> & snap_running);
 void matrix_rotat_koef();
 void min_max_cloud();
-void saveLUT(cv::Mat in, std::string filename);
+void saveLUT(cv::Mat in, cv::Mat rgbd, std::string filename, int counter);
 
 
 int matrix[16]={0,0,1070,0,0,0,749,0,616};
@@ -134,20 +134,21 @@ void frames_show(std::vector<Camera*> connected_cams, pclCloud merged_cloud, std
 
         for(auto connected_cams_number=0;connected_cams_number<connected_cams.size();connected_cams_number++)
         {
-
-                cv::imshow("Depth_Image" + IntToStr(connected_cams[connected_cams_number]->getId()),(connected_cams[connected_cams_number]->getDepth() / imshow_32to8));
+     //             cv::Mat tmpIR;
+    //              connected_cams[connected_cams_number]->getIR().convertTo(tmpIR,CV_16UC1);
+    //            cv::imshow("Depth_Image" + IntToStr(connected_cams[connected_cams_number]->getId()),(connected_cams[connected_cams_number]->getDepth() / imshow_32to8));
     //            cv::imshow("RGB_Image" + IntToStr(connected_cams[connected_cams_number]->getId()),(connected_cams[connected_cams_number]->getRGB()));
-    //            cv::imshow("IR_Image" + IntToStr(connected_cams[connected_cams_number]->getId()),(connected_cams[connected_cams_number]->getIR() / imshow_32to8 ));
+                //cv::imshow("IR_Image" + IntToStr(connected_cams[connected_cams_number]->getId()),tmpIR);
     //            cv::imshow("RGBD_Image" + IntToStr(connected_cams[connected_cams_number]->getId()),(connected_cams[connected_cams_number]->getRGBD() ));
     //            cv::imshow("Mask_Image" + IntToStr(connected_cams[connected_cams_number]->getId()),(connected_cams[connected_cams_number]->getMask() ));
 
                 if(!connected_cams[connected_cams_number]->getRangedRGBD().empty())
                 {
-//                    cv::imshow("RGBD_Image" + IntToStr(connected_cams[connected_cams_number]->getId()),(connected_cams[connected_cams_number]->getRangedRGBD() ));
+ //                   cv::imshow("croped_RGBD_Image" + IntToStr(connected_cams[connected_cams_number]->getId()),(connected_cams[connected_cams_number]->getRangedRGBD() ));
                 }
                 if(!connected_cams[connected_cams_number]->getRangedDepth().empty())
                 {
-//                    cv::imshow("Depth_Image" + IntToStr(connected_cams[connected_cams_number]->getId()),(connected_cams[connected_cams_number]->getRangedDepth() / imshow_32to8 ));
+ //                   cv::imshow("croped_Depth_Image" + IntToStr(connected_cams[connected_cams_number]->getId()),(connected_cams[connected_cams_number]->getRangedDepth() / imshow_32to8 ));
                 }
 
 
@@ -171,17 +172,18 @@ void frames_show(std::vector<Camera*> connected_cams, pclCloud merged_cloud, std
             case 'W':
                 for(auto i=0;i<connected_cams.size();i++)
                 {
-
+                    cv::Mat tmpIR;
+                    connected_cams[i]->getIR().convertTo(tmpIR,CV_8UC1,255,0);
                     cv::imwrite("output/"+IntToStr(connected_cams[i]->getId())+"/RGBD/RGBD_" +IntToStr(saved_frame_counter)+".jpeg",connected_cams[i]->getRGBD());
                     cv::imwrite("output/"+IntToStr(connected_cams[i]->getId())+"/DEPTH/DEPTH_" +IntToStr(saved_frame_counter)+".jpeg",connected_cams[i]->getDepth() );
                     cv::imwrite("output/"+IntToStr(connected_cams[i]->getId())+"/RGB/RGB_" +IntToStr(saved_frame_counter)+".jpeg",connected_cams[i]->getRGB());
-                    cv::imwrite("output/"+IntToStr(connected_cams[i]->getId())+"/IR/IR_" +IntToStr(saved_frame_counter)+".jpeg",connected_cams[i]->getIR() );
-                    saveLUT(connected_cams[i]->getDepth(),connected_cams[i]->getSerial());
+                    cv::imwrite("output/"+IntToStr(connected_cams[i]->getId())+"/IR/IR_" +IntToStr(saved_frame_counter)+".jpeg",connected_cams[i]->getIR() / 64  );
+                    saveLUT(connected_cams[i]->getDepth(),connected_cams[i]->getRGBD(),IntToStr(connected_cams[i]->getId()),saved_frame_counter);
                 }
                 merged_cloud.removeOutliers(10,1.5);
                 pcl::io::savePLYFile("output/CLOUDS/cloud_"+IntToStr(saved_frame_counter)+".ply",*merged_cloud.getCloud());
 ////                merged_cloud.creteMesh(10);
-//                saved_frame_counter++;
+                saved_frame_counter++;
                 break;
 
             case 't':
@@ -257,15 +259,16 @@ std::string IntToStr(int n)
     return result.str();
 }
 
-void saveLUT(cv::Mat in, std::string filename)
+void saveLUT(cv::Mat in, cv::Mat rgbd, std::string filename,int counter)
 {
 #define ir_depth_width 512
 #define ir_depth_height 424
     int i,j;
 
+    cv::imwrite("test/"+filename+" "+IntToStr(counter)+".jpeg",rgbd);
 
     ofstream myfile;
-    myfile.open(filename+".txt");
+    myfile.open("test/"+filename+" "+IntToStr(counter)+".txt");
 
     for(i = 0; i < in.cols; i++)
     {
@@ -279,7 +282,6 @@ void saveLUT(cv::Mat in, std::string filename)
 
     myfile.close();
 
-    cv::Mat encoded(cv::Size(ir_depth_width,ir_depth_height), CV_8UC4);
 
 }
 

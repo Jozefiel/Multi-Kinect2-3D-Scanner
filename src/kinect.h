@@ -85,6 +85,7 @@ private:
     libfreenect2::FrameMap frame;
 
     libfreenect2::Frame *undistorted    = new libfreenect2::Frame(ir_depth_width, ir_depth_height, ir_depth_bpp);
+    libfreenect2::Frame *undistortedDepth = new libfreenect2::Frame(ir_depth_width, ir_depth_height, ir_depth_bpp);
     libfreenect2::Frame *registered     = new libfreenect2::Frame(ir_depth_width, ir_depth_height, ir_depth_bpp);
     libfreenect2::Frame *depth2rgb      = new libfreenect2::Frame(color_width,color_height, color_bpp);
 

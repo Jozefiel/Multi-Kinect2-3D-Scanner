@@ -27,12 +27,17 @@ Kinect::Kinect(libfreenect2::Freenect2 * _freenect,int _id)
         }
 
         this->pListener = new libfreenect2::SyncMultiFrameListener(libfreenect2::Frame::Color | libfreenect2::Frame::Depth | libfreenect2::Frame::Ir );
+
+
         this->pDev->setIrAndDepthFrameListener(pListener);
         this->pDev->setColorFrameListener(pListener);
 
         this->start();
-        this->registration();
+
         this->loadCamParams();
+//        this->pDev->setIrCameraParams(ir_calib_params);
+        this->registration();
+
     }
     catch (std::exception& e)
     {
@@ -72,6 +77,7 @@ void Kinect::frames(std::atomic<bool> & keep_running)
 {
     std::chrono::system_clock::time_point then, now;
 
+
     while(keep_running)
     {
         if(this->pListener->waitForNewFrame(frame,camAttachTime))
@@ -85,13 +91,13 @@ void Kinect::frames(std::atomic<bool> & keep_running)
             cv::Mat(depth->height, depth->width, CV_32FC1, depth->data).copyTo(*this->depthMat);
             cv::Mat(ir->height, ir->width, CV_32FC1, ir->data).copyTo(*this->irMat);
             cv::Mat(rgb->height, rgb->width, CV_8UC4, rgb->data).copyTo(*this->colorMat);
-
+          //  this->pRegistrated->undistortDepth(depth,undistortedDepth);
             this->pRegistrated->apply(rgb,depth, this->undistorted, this->registered,true, this->depth2rgb);
+          //  cv::Mat( this->undistortedDepth->height,  this->undistortedDepth->width, CV_8UC4, undistortedDepth->data).copyTo(* this->depthMat);
             cv::Mat( this->registered->height,  this->registered->width, CV_8UC4, registered->data).copyTo(* this->rgbdMat);
 
             //now=std::chrono::system_clock::now();
   //          std::cout << "Snapping: "<<this->id<<" "<< std::chrono::duration_cast<std::chrono::milliseconds>(now - then).count() << " ms" << std::endl;
-
             pListener->release(frame);
         }
         else
@@ -117,6 +123,16 @@ void Kinect::loadCamParams()
         rgb_calib_params.cy = pt.get<float>("Calibration.transform_rgb_cy");
         rgb_calib_params.fx = pt.get<float>("Calibration.transform_rgb_fx");
         rgb_calib_params.fy = pt.get<float>("Calibration.transform_rgb_fy");
+
+        ir_calib_params.cx = pt.get<float>("Calibration.transform_ir_cx");
+        ir_calib_params.cy = pt.get<float>("Calibration.transform_ir_cy");
+        ir_calib_params.fx = pt.get<float>("Calibration.transform_ir_fx");
+        ir_calib_params.fy = pt.get<float>("Calibration.transform_ir_fy");
+        ir_calib_params.k1 = pt.get<float>("Calibration.transform_ir_k1");
+        ir_calib_params.k2 = pt.get<float>("Calibration.transform_ir_k2");
+        ir_calib_params.k3 = pt.get<float>("Calibration.transform_ir_k3");
+        ir_calib_params.p1 = pt.get<float>("Calibration.transform_ir_p1");
+        ir_calib_params.p2 = pt.get<float>("Calibration.transform_ir_p2");
 
     } catch (int e) {
 
@@ -184,13 +200,21 @@ void Kinect::rangeFrames(int lowTreshold,int highTreshold)
 
     cv::inRange(*tmpDepthMat,lowTreshold,highTreshold,*mask);
 
+    cv::Mat element = getStructuringElement( cv::MORPH_RECT,cv::Size( 2*1 + 1, 2*1+1 ),cv::Point( 1, 1 ) );
+    /// Apply the dilation operation
+    erode( *mask, *mask, element );
+
     tmpDepthMat->copyTo(*rangedDepthMat,*mask);
-    tmpRGBDMat->copyTo(*rangedRGBDMat);
+    tmpRGBDMat->copyTo(*rangedRGBDMat,*mask);
 
     tmpDepthMat->release();
     tmpRGBDMat->release();
     delete tmpDepthMat;
     delete tmpRGBDMat;
+
+
+
+
 }
 
 void Kinect::cloudData(std::atomic<bool> & keep_running, std::atomic<bool> & compute_cloud_style )
@@ -297,9 +321,10 @@ void Kinect::depth2cloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &tmpCloud)
     {
         for (int x_side = 0; x_side < ir_depth_height; x_side++)
         {
-            float Z = this->rangedDepthMat->at<float>(x_side, y_side) / 1;
+            double Z = this->rangedDepthMat->at<float>(x_side, y_side) / 1;
             if(Z>0)
             {
+                Z=1.0 / (Z * -0.0030711016 + 3.3309495161);
                 x=(x_side-cx)*Z/fx;
                 y=(y_side-cy)*Z/fy;
                 z=Z;

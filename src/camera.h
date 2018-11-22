@@ -13,6 +13,8 @@
 #include <pcl/common/io.h>
 #include <pcl/filters/filter_indices.h>
 
+
+
 class Camera
 {
 public:
