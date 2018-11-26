@@ -41,7 +41,7 @@ private:
     std::vector<std::thread>    cam_threads;                                           // vector of threads for image snapping
     std::vector<std::thread>    cloud_threads;
     std::atomic<bool> snap_running {true};
-    std::atomic<bool> compute_cloud_style {true};
+    std::atomic<bool> compute_cloud_style {false};
     std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> merged_clouds;
 
 };

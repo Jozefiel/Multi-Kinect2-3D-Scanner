@@ -3,6 +3,8 @@
 support::support()
 {
 
+
+
 }
 
 //CAMERA_SUPPORT
@@ -14,6 +16,7 @@ void support::cameraInit()
 
 void support::kinectInit()
 {
+    libfreenect2::setGlobalLogger(nullptr);
     libfreenect2::Freenect2 * pFreenect2 = new libfreenect2::Freenect2;             // freenect2 init
     int connected_kinects = pFreenect2->enumerateDevices();                         // number of connected kinects
     for(auto id=0;id<connected_kinects;id++)                                        // add connected kinects to vector cams
