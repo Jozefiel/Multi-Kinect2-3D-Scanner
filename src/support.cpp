@@ -1,9 +1,7 @@
 #include "support.h"
 
-support::support()
+support::support(QObject *parent) : QObject(parent)
 {
-
-
 
 }
 
@@ -38,20 +36,18 @@ std::vector<Camera*> support::cameras()
     return connected_cams;
 }
 
-
 int support::connectedCameras()
 {
  return static_cast<int>(connected_cams.size());
 }
 
-
 //THREADS
-
 
 void support::threadsInit()
 {
     this->threadCameraSnapping();
     this->threadComputePointCloud();
+    this->threadFrameUpdater();
 }
 
 void support::threadCameraSnapping()
@@ -83,6 +79,20 @@ void support::threadComputePointCloud()
     std::cout<<"support::threadComputePointCloud started"<<std::endl;
 }
 
+void support::threadFrameUpdater()
+{
+    viewer_threads.push_back(std::thread(&support::viewerUpdater,this,std::ref(snap_running)));
+    viewer_threads[0].detach();
+}
+
+void support::closeThreads()
+{
+    snap_running=false;
+    cloud_threads.clear();
+    cam_threads.clear();
+    viewer_threads.clear();
+}
+
 //CLOUD
 
 void support::cloudInit()
@@ -99,7 +109,6 @@ std::vector<pclCloud> support::getClouds()
 {
     return clouds;
 }
-
 
 void support::camera2cloudDataTransfer()
 {
@@ -188,6 +197,45 @@ std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> support::mergeClouds(bool tr
     }
 //    std::cout<<"support::mergeClouds"<<std::endl;
     return temp_clouds;
+}
+
+//viewer
+
+void support::viewerUpdater(std::atomic<bool> &snap_running)
+{
+    while(snap_running)
+    {
+//        for(auto connected_cams_number=0;connected_cams_number<connected_cams.size();connected_cams_number++)
+//        {
+                cv::Mat tmpIR;
+                connected_cams[0]->getIR().convertTo(tmpIR,CV_8UC1);
+
+                cv::Mat tmpDepth;
+                connected_cams[0]->getDepth().convertTo(tmpDepth,CV_8UC1);
+
+//                cv::imshow("Depth_Image" + IntToStr(connected_cams[connected_cams_number]->getId()),(connected_cams[connected_cams_number]->getDepth() / imshow_32to8));
+//                cv::imshow("RGB_Image" + IntToStr(connected_cams[connected_cams_number]->getId()),(connected_cams[connected_cams_number]->getRGB()));
+//                cv::imshow("IR_Image" + IntToStr(connected_cams[connected_cams_number]->getId()),tmpIR);
+//                cv::imshow("RGBD_Image" + IntToStr(connected_cams[connected_cams_number]->getId()),(connected_cams[connected_cams_number]->getRGBD() ));
+//                cv::imshow("Mask_Image" + IntToStr(connected_cams[connected_cams_number]->getId()),(connected_cams[connected_cams_number]->getMask() ));
+//            cv::Mat frame;
+//            connected_cams[0]->getRGBD().copyTo(frame);
+            emit newRGBD(QPixmap::fromImage(QImage(connected_cams[0]->getRGBD().data,connected_cams[0]->getRGBD().cols,connected_cams[0]->getRGBD().rows,connected_cams[0]->getRGBD().step,QImage::Format_RGBA8888).rgbSwapped()),0);
+            emit newDepth(QPixmap::fromImage(QImage(tmpDepth.data,tmpDepth.cols,tmpDepth.rows,tmpDepth.step,QImage::Format_Grayscale8).scaled(0,255)),0);
+            emit newIR(QPixmap::fromImage(QImage(tmpIR.data,tmpIR.cols,tmpIR.rows,tmpIR.step,QImage::Format_Indexed8).scaled(0,255)),0);
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+       //}
+    }
+}
+
+//support
+
+std::string support::IntToStr(int n)
+{
+    std::stringstream result;
+    result << n;
+    return result.str();
 }
 
 

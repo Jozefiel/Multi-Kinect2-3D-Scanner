@@ -12,12 +12,21 @@ if(CCACHE_FOUND)
 endif(CCACHE_FOUND)
 set (CMAKE_CXX_FLAGS "-DPCL_ONLY_CORE_POINT_TYPES=ON -DNO_EXPLICIT_INSTANTIATIONS")
 
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+set(CMAKE_AUTOUIC ON)
+
+
 #find requirements
 find_package(PCL 1.8 REQUIRED )
 find_package(OpenCV REQUIRED )
 find_package(freenect2 REQUIRED )
 find_package(VTK REQUIRED )
 find_package(Threads )
+
+find_package(Qt5Widgets REQUIRED)
+find_package(Qt5Gui REQUIRED)
+find_package(Qt5Core REQUIRED)
 
 #link libs
 include_directories("/usr/include/libusb-1.0/")
@@ -27,9 +36,18 @@ add_definitions(${PCL_DEFINITIONS})
 
 #load src directory
 file(GLOB_RECURSE SRCS src/*.cpp)
-add_executable(${PROJECT}  ${SRCS})
 
-target_link_libraries(${PROJECT} ${PCL_LIBRARIES} ${PCL_FILTERS_LIBRARIES} ${OpenCV_LIBRARIES} ${freenect2_LIBRARY} ${CMAKE_THREAD_LIBS_INIT} )
+qt5_wrap_ui(UIS_HDRS
+    src/mainwindow.ui
+)
+
+add_executable(${PROJECT}  ${SRCS} ${UIS_HDRS})
+
+
+
+
+
+target_link_libraries(${PROJECT} ${PCL_LIBRARIES} ${PCL_FILTERS_LIBRARIES} ${OpenCV_LIBRARIES} ${freenect2_LIBRARY} ${CMAKE_THREAD_LIBS_INIT} Qt5::Core Qt5::Widgets Qt5::Gui)
 
 #libfreenect cmake settings
 FIND_LIBRARY(freenect2_LIBRARY freenect2

@@ -98,7 +98,7 @@ void Kinect::frames(std::atomic<bool> & keep_running)
           //  cv::Mat( this->undistortedDepth->height,  this->undistortedDepth->width, CV_8UC4, undistortedDepth->data).copyTo(* this->depthMat);
             cv::Mat( this->registered->height,  this->registered->width, CV_8UC4, registered->data).copyTo(* this->rgbdMat);
 
-            //now=std::chrono::system_clock::now();
+  //          now=std::chrono::system_clock::now();
   //          std::cout << "Snapping: "<<this->id<<" "<< std::chrono::duration_cast<std::chrono::milliseconds>(now - then).count() << " ms" << std::endl;
             pListener->release(frame);
         }

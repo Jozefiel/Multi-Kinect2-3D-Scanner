@@ -5,13 +5,18 @@
 #include "kinect.h"
 #include "pcl.h"
 
+#include <QObject>
+#include <QImage>
+#include <QPixmap>
+
 #define mutexTimeDelay 10
+#define imshow_32to8 2048
 
-
-class support
+class support : public QObject
 {
+    Q_OBJECT
 public:
-    support();
+    support(QObject *parent = nullptr);
 
     void cameraInit();
     void kinectInit();
@@ -22,6 +27,8 @@ public:
     void threadsInit();
     void threadCameraSnapping();
     void threadComputePointCloud();
+    void threadFrameUpdater();
+    void closeThreads();
 
     void cloudInit();
     void camera2cloudDataTransfer();
@@ -33,6 +40,12 @@ public:
     std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> mergeClouds(bool transformed);
     std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> mergeClouds(bool transformed, std::vector<Eigen::Matrix4d> transform_matrix);
 
+    void viewerUpdater(std::atomic<bool> & snap_running);
+
+    std::string  IntToStr(int n);
+
+    std::atomic<bool> snap_running {true};
+
 private:
 
     std::vector<Camera*>        connected_cams;                                            // vector of Camera objects
@@ -40,10 +53,21 @@ private:
 
     std::vector<std::thread>    cam_threads;                                           // vector of threads for image snapping
     std::vector<std::thread>    cloud_threads;
-    std::atomic<bool> snap_running {true};
+    std::vector<std::thread>    viewer_threads;
+
+
     std::atomic<bool> compute_cloud_style {false};
     std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> merged_clouds;
 
+signals:
+    void newRGBD(QPixmap pix,int id);
+    void newDepth(QPixmap pix,int id);
+    void newIR(QPixmap pix,int id);
+
+
 };
 
+
+
 #endif // SUPPORT_H
+
