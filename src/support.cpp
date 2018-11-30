@@ -47,6 +47,7 @@ void support::threadsInit()
 {
     this->threadCameraSnapping();
     this->threadComputePointCloud();
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
     this->threadFrameUpdater();
 }
 
@@ -82,7 +83,12 @@ void support::threadComputePointCloud()
 void support::threadFrameUpdater()
 {
     viewer_threads.push_back(std::thread(&support::viewerUpdater,this,std::ref(snap_running)));
-    viewer_threads[0].detach();
+    viewer_threads.push_back(std::thread(&support::pclUpdater,this,std::ref(snap_running)));
+
+    for (auto viewer_threads_counter=0; viewer_threads_counter<this->viewer_threads.size(); viewer_threads_counter++)     //detach threads
+    {
+        viewer_threads[viewer_threads_counter].detach();
+    }
 }
 
 void support::closeThreads()
@@ -102,7 +108,6 @@ void support::cloudInit()
         this->clouds.push_back(pclCloud(this->cameras()[id]->getId(),this->cameras()[id]->getSerial()));
     }
     std::cout<<"support::cloudInit started"<<std::endl;
-
 }
 
 std::vector<pclCloud> support::getClouds()
@@ -203,31 +208,42 @@ std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> support::mergeClouds(bool tr
 
 void support::viewerUpdater(std::atomic<bool> &snap_running)
 {
+    cv::Mat tmpIR;
+    cv::Mat tmpDepth;
     while(snap_running)
     {
-//        for(auto connected_cams_number=0;connected_cams_number<connected_cams.size();connected_cams_number++)
-//        {
-                cv::Mat tmpIR;
-                connected_cams[0]->getIR().convertTo(tmpIR,CV_8UC1);
+        for(auto connected_cams_number=0;connected_cams_number<connected_cams.size();connected_cams_number++)
+        {
+            tmpDepth=connected_cams[connected_cams_number]->getDepth()/8;
+            tmpDepth.convertTo(tmpDepth,CV_8UC1);
 
-                cv::Mat tmpDepth;
-                connected_cams[0]->getDepth().convertTo(tmpDepth,CV_8UC1);
+            tmpIR=connected_cams[connected_cams_number]->getIR()/64;
+            tmpIR.convertTo(tmpIR, CV_8UC1);
 
-//                cv::imshow("Depth_Image" + IntToStr(connected_cams[connected_cams_number]->getId()),(connected_cams[connected_cams_number]->getDepth() / imshow_32to8));
-//                cv::imshow("RGB_Image" + IntToStr(connected_cams[connected_cams_number]->getId()),(connected_cams[connected_cams_number]->getRGB()));
-//                cv::imshow("IR_Image" + IntToStr(connected_cams[connected_cams_number]->getId()),tmpIR);
-//                cv::imshow("RGBD_Image" + IntToStr(connected_cams[connected_cams_number]->getId()),(connected_cams[connected_cams_number]->getRGBD() ));
-//                cv::imshow("Mask_Image" + IntToStr(connected_cams[connected_cams_number]->getId()),(connected_cams[connected_cams_number]->getMask() ));
-//            cv::Mat frame;
-//            connected_cams[0]->getRGBD().copyTo(frame);
-            emit newRGBD(QPixmap::fromImage(QImage(connected_cams[0]->getRGBD().data,connected_cams[0]->getRGBD().cols,connected_cams[0]->getRGBD().rows,connected_cams[0]->getRGBD().step,QImage::Format_RGBA8888).rgbSwapped()),0);
-            emit newDepth(QPixmap::fromImage(QImage(tmpDepth.data,tmpDepth.cols,tmpDepth.rows,tmpDepth.step,QImage::Format_Grayscale8).scaled(0,255)),0);
-            emit newIR(QPixmap::fromImage(QImage(tmpIR.data,tmpIR.cols,tmpIR.rows,tmpIR.step,QImage::Format_Indexed8).scaled(0,255)),0);
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-       //}
+            emit newRGBD(QPixmap::fromImage(QImage(connected_cams[connected_cams_number]->getRGBD().data,connected_cams[connected_cams_number]->getRGBD().cols,connected_cams[connected_cams_number]->getRGBD().rows,connected_cams[connected_cams_number]->getRGBD().step,QImage::Format_RGBA8888).rgbSwapped()),connected_cams_number);
+            emit newDepth(QPixmap::fromImage(QImage(tmpDepth.data,tmpDepth.cols,tmpDepth.rows,tmpDepth.step,QImage::Format_Indexed8)),connected_cams_number);
+            emit newIR(QPixmap::fromImage(QImage(tmpIR.data,tmpIR.cols,tmpIR.rows,tmpIR.step,QImage::Format_Indexed8)),connected_cams_number);
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+       }
     }
 }
+
+void support::pclUpdater(std::atomic<bool> &snap_running)
+{
+    merged_cloud= new pclCloud(4);
+    while(snap_running)
+    {
+        this->camera2cloudDataTransfer();   // store cloud to pcl objects
+        merged_cloud->mergeClouds(this->mergeClouds(true));//! error when true, random fallings
+        pcl::copyPointCloud(*merged_cloud->getTransformedCloud(),cloudik);
+
+        if(!cloudik.empty())
+            emit newCloud();
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+    }
+}
+
 
 //support
 

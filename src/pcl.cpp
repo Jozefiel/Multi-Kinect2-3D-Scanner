@@ -63,7 +63,7 @@ void pclCloud::pclCopyCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cam_cloud)
     }
     else
     {
-        std::cout<<"empty cloud: "<<id<<std::endl;
+        std::cout<<"empty cloud: "<<this->id<<std::endl;
     }
 }
 

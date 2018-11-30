@@ -16,23 +16,27 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-
 #find requirements
 find_package(PCL 1.8 REQUIRED )
 find_package(OpenCV REQUIRED )
 find_package(freenect2 REQUIRED )
-find_package(VTK REQUIRED )
-find_package(Threads )
+find_package(VTK 9 REQUIRED )
+find_package(Threads REQUIRED)
 
 find_package(Qt5Widgets REQUIRED)
 find_package(Qt5Gui REQUIRED)
 find_package(Qt5Core REQUIRED)
+find_package(Qt5 REQUIRED Widgets)
+
+list(REMOVE_ITEM PCL_LIBRARIES "vtkproj4")
 
 #link libs
 include_directories("/usr/include/libusb-1.0/")
+
 include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
+
 
 #load src directory
 file(GLOB_RECURSE SRCS src/*.cpp)
@@ -44,7 +48,7 @@ qt5_wrap_ui(UIS_HDRS
 add_executable(${PROJECT}  ${SRCS} ${UIS_HDRS})
 
 
-
+qt5_use_modules(${PROJECT_NAME} Widgets)
 
 
 target_link_libraries(${PROJECT} ${PCL_LIBRARIES} ${PCL_FILTERS_LIBRARIES} ${OpenCV_LIBRARIES} ${freenect2_LIBRARY} ${CMAKE_THREAD_LIBS_INIT} Qt5::Core Qt5::Widgets Qt5::Gui)

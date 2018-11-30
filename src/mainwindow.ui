@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1671</width>
-    <height>566</height>
+    <height>1029</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -46,17 +46,17 @@
       <x>10</x>
       <y>40</y>
       <width>1641</width>
-      <height>501</height>
+      <height>941</height>
      </rect>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>3</number>
     </property>
     <widget class="QWidget" name="tab">
      <attribute name="title">
-      <string>Tab 1</string>
+      <string>CAM-0</string>
      </attribute>
-     <widget class="QGraphicsView" name="graphicsView_0">
+     <widget class="QGraphicsView" name="graphicsView_rgbd_0">
       <property name="geometry">
        <rect>
         <x>10</x>
@@ -72,7 +72,7 @@
        </sizepolicy>
       </property>
      </widget>
-     <widget class="QGraphicsView" name="graphicsView_1">
+     <widget class="QGraphicsView" name="graphicsView_depth_0">
       <property name="geometry">
        <rect>
         <x>550</x>
@@ -88,7 +88,7 @@
        </sizepolicy>
       </property>
      </widget>
-     <widget class="QGraphicsView" name="graphicsView_2">
+     <widget class="QGraphicsView" name="graphicsView_ir_0">
       <property name="geometry">
        <rect>
         <x>1090</x>
@@ -98,11 +98,147 @@
        </rect>
       </property>
      </widget>
+     <widget class="QGraphicsView" name="graphicsView_ranged_rgbd_0">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>460</y>
+        <width>531</width>
+        <height>441</height>
+       </rect>
+      </property>
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+     </widget>
+     <widget class="QGraphicsView" name="graphicsView_ranged_rgbd_1">
+      <property name="geometry">
+       <rect>
+        <x>550</x>
+        <y>460</y>
+        <width>531</width>
+        <height>441</height>
+       </rect>
+      </property>
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+     </widget>
     </widget>
     <widget class="QWidget" name="tab_2">
      <attribute name="title">
-      <string>Tab 2</string>
+      <string>CAM-1</string>
      </attribute>
+     <widget class="QGraphicsView" name="graphicsView_ir_1">
+      <property name="geometry">
+       <rect>
+        <x>1090</x>
+        <y>10</y>
+        <width>531</width>
+        <height>441</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QGraphicsView" name="graphicsView_depth_1">
+      <property name="geometry">
+       <rect>
+        <x>550</x>
+        <y>10</y>
+        <width>531</width>
+        <height>441</height>
+       </rect>
+      </property>
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+     </widget>
+     <widget class="QGraphicsView" name="graphicsView_rgbd_1">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>10</y>
+        <width>531</width>
+        <height>441</height>
+       </rect>
+      </property>
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+     </widget>
+    </widget>
+    <widget class="QWidget" name="tab_3">
+     <attribute name="title">
+      <string>CAM-2</string>
+     </attribute>
+     <widget class="QGraphicsView" name="graphicsView_ir_2">
+      <property name="geometry">
+       <rect>
+        <x>1090</x>
+        <y>10</y>
+        <width>531</width>
+        <height>441</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QGraphicsView" name="graphicsView_rgbd_2">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>10</y>
+        <width>531</width>
+        <height>441</height>
+       </rect>
+      </property>
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+     </widget>
+     <widget class="QGraphicsView" name="graphicsView_depth_2">
+      <property name="geometry">
+       <rect>
+        <x>550</x>
+        <y>10</y>
+        <width>531</width>
+        <height>441</height>
+       </rect>
+      </property>
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+     </widget>
+    </widget>
+    <widget class="QWidget" name="tab_4">
+     <attribute name="title">
+      <string>PCL-VIEWER</string>
+     </attribute>
+     <widget class="QVTKWidget" name="qvtkWidget">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>10</y>
+        <width>951</width>
+        <height>541</height>
+       </rect>
+      </property>
+     </widget>
     </widget>
    </widget>
   </widget>
@@ -118,6 +254,13 @@
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>QVTKWidget</class>
+   <extends>QWidget</extends>
+   <header>QVTKWidget.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

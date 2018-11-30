@@ -9,6 +9,7 @@
 #include <QImage>
 #include <QPixmap>
 
+
 #define mutexTimeDelay 10
 #define imshow_32to8 2048
 
@@ -41,10 +42,12 @@ public:
     std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> mergeClouds(bool transformed, std::vector<Eigen::Matrix4d> transform_matrix);
 
     void viewerUpdater(std::atomic<bool> & snap_running);
+    void pclUpdater(std::atomic<bool> &snap_running);
 
     std::string  IntToStr(int n);
 
     std::atomic<bool> snap_running {true};
+    pcl::PointCloud<pcl::PointXYZRGB> cloudik;
 
 private:
 
@@ -57,13 +60,14 @@ private:
 
 
     std::atomic<bool> compute_cloud_style {false};
-    std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> merged_clouds;
+    std::vector<pcl::PointCloud<pcl::PointXYZRGB>> merged_clouds;
+    pclCloud * merged_cloud;
 
 signals:
     void newRGBD(QPixmap pix,int id);
     void newDepth(QPixmap pix,int id);
     void newIR(QPixmap pix,int id);
-
+    void newCloud();
 
 };
 
