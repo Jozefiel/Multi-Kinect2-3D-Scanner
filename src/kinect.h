@@ -100,12 +100,15 @@ private:
 
 
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
+    Eigen::Matrix4d * transformation_matrix=nullptr;
 
     boost::property_tree::ptree pt;
     std::timed_mutex frame_mutex;
     std::timed_mutex cloud_mutex;
     libfreenect2::Freenect2Device::ColorCameraParams    rgb_calib_params;
     libfreenect2::Freenect2Device::IrCameraParams       ir_calib_params;
+
+
 
 };
 #endif // KINECT_H

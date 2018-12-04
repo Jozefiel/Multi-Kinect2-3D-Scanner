@@ -7,8 +7,8 @@ MainWindow::MainWindow(QWidget *parent) :QMainWindow(parent), ui(new Ui::MainWin
     ui->setupUi(this);
     this->setWindowTitle ("3D OSAS");
 
-    Support=new support();
-    Support->cameraInit();                                       //! camera init, create connection with Kinects and Realsenses
+    Support.push_back(new support());
+    Support[0]->cameraInit();                                       //! camera init, create connection with Kinects and Realsenses
 
     ui->graphicsView_rgbd_0->setScene(new QGraphicsScene(this));
     ui->graphicsView_depth_0->setScene(new QGraphicsScene(this));
@@ -22,10 +22,10 @@ MainWindow::MainWindow(QWidget *parent) :QMainWindow(parent), ui(new Ui::MainWin
     ui->graphicsView_depth_2->setScene(new QGraphicsScene(this));
     ui->graphicsView_ir_2->setScene(new QGraphicsScene(this));
 
-    connect(Support, SIGNAL(newRGBD(QPixmap,int)), this, SLOT(onNewRGBD(QPixmap,int)));
-    connect(Support, SIGNAL(newDepth(QPixmap,int)), this, SLOT(onNewDepth(QPixmap,int)));
-    connect(Support, SIGNAL(newIR(QPixmap,int)), this, SLOT(onNewIR(QPixmap,int)));
-    connect(Support, SIGNAL(newCloud()), this, SLOT(onNewCloud()));
+    connect(Support[0], SIGNAL(newRGBD(QPixmap,int)), this, SLOT(onNewRGBD(QPixmap,int)));
+    connect(Support[0], SIGNAL(newDepth(QPixmap,int)), this, SLOT(onNewDepth(QPixmap,int)));
+    connect(Support[0], SIGNAL(newIR(QPixmap,int)), this, SLOT(onNewIR(QPixmap,int)));
+    connect(Support[0], SIGNAL(newCloud()), this, SLOT(onNewCloud()));
 
     ui->graphicsView_rgbd_0->scene()->addItem(&rgbd[0]);
     ui->graphicsView_depth_0->scene()->addItem(&depth[0]);
@@ -37,7 +37,7 @@ MainWindow::MainWindow(QWidget *parent) :QMainWindow(parent), ui(new Ui::MainWin
     ui->graphicsView_depth_2->scene()->addItem(&depth[2]);
     ui->graphicsView_ir_2->scene()->addItem(&ir[2]);
 
-    viewer=new pcl::visualization::PCLVisualizer("test",false);
+    viewer=new pcl::visualization::PCLVisualizer("viewer",false);
     ui->qvtkWidget->SetRenderWindow(viewer->getRenderWindow());
     viewer->setupInteractor(ui->qvtkWidget->GetInteractor(), ui->qvtkWidget->GetRenderWindow());
     ui->qvtkWidget->update ();
@@ -46,14 +46,15 @@ MainWindow::MainWindow(QWidget *parent) :QMainWindow(parent), ui(new Ui::MainWin
 MainWindow::~MainWindow()
 {
     delete ui;
-    Support->closeThreads();
+    Support[0]->closeThreads();
 }
 
 void MainWindow::onNewCloud()
 {
-    std::cout<<"MainWindow::onNewCloud new cloud for viewer"<<std::endl;
-    pcl::copyPointCloud(Support->cloudik,*cloud);
-    viewer->updatePointCloud(cloud, "cloud");
+
+    viewer->removePointCloud("cloud");
+    viewer->addPointCloud(Support[0]->merged_cloud->getCloud(), "cloud");
+    viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "cloud");
     ui->qvtkWidget->update();
 }
 
@@ -74,12 +75,55 @@ void MainWindow::onNewIR(QPixmap newFrm,int i)
 
 void MainWindow::on_pushButton_clicked()
 {
-    Support->snap_running=true;
-    Support->cloudInit();
-    Support->threadsInit();                                      //! threads init, detached snapping and cloud computing started
+    Support[0]->snap_running=true;
+    Support[0]->cloudInit();
+    Support[0]->threadsInit();                                      //! threads init, detached snapping and cloud computing started
 }
 
 void MainWindow::on_pushButton_2_clicked()
 {
-    Support->closeThreads();
+    Support[0]->closeThreads();
+}
+
+void MainWindow::on_pushButton_3_clicked()
+{
+}
+
+void MainWindow::on_checkBox_stateChanged(int arg1)
+{
+    Support[0]->changeComputeStyle(arg1);
+}
+
+void MainWindow::on_save_all_button_clicked()
+{
+
+    for(int i=0; i < Support[0]->getConnectedCams().size();i++)
+    {
+        cv::Mat tmpIR;
+        Support[0]->getConnectedCams()[i]->getIR().convertTo(tmpIR,CV_8UC1,255,0);
+
+        cv::imwrite("output/"+Support[0]->IntToStr(Support[0]->getConnectedCams()[i]->getId())+"/RGBD/RGBD_"+Support[0]->IntToStr(saved_frame_counter)+".jpeg",Support[0]->getConnectedCams()[i]->getRGBD());
+        cv::imwrite("output/"+Support[0]->IntToStr(Support[0]->getConnectedCams()[i]->getId())+"/DEPTH/DEPTH_"+Support[0]->IntToStr(saved_frame_counter)+".jpeg",Support[0]->getConnectedCams()[i]->getDepth());
+        cv::imwrite("output/"+Support[0]->IntToStr(Support[0]->getConnectedCams()[i]->getId())+"/RGB/RGB_"+Support[0]->IntToStr(saved_frame_counter)+".jpeg",Support[0]->getConnectedCams()[i]->getRGB());
+        cv::imwrite("output/"+Support[0]->IntToStr(Support[0]->getConnectedCams()[i]->getId())+"/IR/IR_"+Support[0]->IntToStr(saved_frame_counter)+".jpeg",Support[0]->getConnectedCams()[i]->getIR() / 64);
+    }
+//    pcl::io::savePLYFile("output/CLOUDS/cloud_"+Support[0]->IntToStr(saved_frame_counter)+".ply",Support[0]->merged_cloud->getCloud());
+
+    saved_frame_counter++;
+}
+
+void MainWindow::on_sequence_stop_clicked()
+{
+    Support[0]->getConnectedCams()[1]->stop();
+    Support[0]->getConnectedCams()[2]->stop();
+    std::this_thread::sleep_for(std::chrono::milliseconds(300));
+    Support[0]->getConnectedCams()[0]->stop();
+    Support[0]->getConnectedCams()[0]->stop();
+    std::this_thread::sleep_for(std::chrono::milliseconds(300));
+    Support[0]->getConnectedCams()[1]->stop();
+    Support[0]->getConnectedCams()[1]->stop();
+    std::this_thread::sleep_for(std::chrono::milliseconds(300));
+    Support[0]->getConnectedCams()[2]->stop();
+    Support[0]->getConnectedCams()[2]->stop();
+
 }

@@ -12,7 +12,7 @@
 #include <pcl/point_types.h>
 #include <pcl/common/io.h>
 #include <pcl/filters/filter_indices.h>
-
+#include <pcl/common/transforms.h>
 
 
 class Camera

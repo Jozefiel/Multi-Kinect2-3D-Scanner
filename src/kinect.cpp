@@ -116,6 +116,7 @@ std::string Kinect::getCamType()
 
 void Kinect::loadCamParams()
 {
+    Eigen::Matrix4d transform_matrix;
     try {
         std::cout << "Kinect::loadCamParams "<< serial<<std::endl;
 
@@ -136,9 +137,45 @@ void Kinect::loadCamParams()
         ir_calib_params.p1 = pt.get<float>("Calibration.transform_ir_p1");
         ir_calib_params.p2 = pt.get<float>("Calibration.transform_ir_p2");
 
+        transform_matrix (0,0) = pt.get<float>("Calibration.transform_00");
+        transform_matrix (0,1) = pt.get<float>("Calibration.transform_01");
+        transform_matrix (0,2) = pt.get<float>("Calibration.transform_02");
+        transform_matrix (0,3) = pt.get<float>("Calibration.transform_03");
+        transform_matrix (1,0) = pt.get<float>("Calibration.transform_10");
+        transform_matrix (1,1) = pt.get<float>("Calibration.transform_11");
+        transform_matrix (1,2) = pt.get<float>("Calibration.transform_12");
+        transform_matrix (1,3) = pt.get<float>("Calibration.transform_13");
+        transform_matrix (2,0) = pt.get<float>("Calibration.transform_20");
+        transform_matrix (2,1) = pt.get<float>("Calibration.transform_21");
+        transform_matrix (2,2) = pt.get<float>("Calibration.transform_22");
+        transform_matrix (2,3) = pt.get<float>("Calibration.transform_23");
+        transform_matrix (3,0) = pt.get<float>("Calibration.transform_30");
+        transform_matrix (3,1) = pt.get<float>("Calibration.transform_31");
+        transform_matrix (3,2) = pt.get<float>("Calibration.transform_32");
+        transform_matrix (3,3) = pt.get<float>("Calibration.transform_33");
+
+
     } catch (int e) {
 
+        std::cout << "No init config found for: "<< serial << e <<std::endl;
+        transform_matrix (0,0) = 1;
+        transform_matrix (0,1) = 0;
+        transform_matrix (0,2) = 0;
+        transform_matrix (0,3) = 0;
+        transform_matrix (1,0) = 0;
+        transform_matrix (1,1) = 1;
+        transform_matrix (1,2) = 0;
+        transform_matrix (1,3) = 0;
+        transform_matrix (2,0) = 0;
+        transform_matrix (2,1) = 0;
+        transform_matrix (2,2) = 1;
+        transform_matrix (2,3) = 0;
+        transform_matrix (3,0) = 0;
+        transform_matrix (3,1) = 0;
+        transform_matrix (3,2) = 0;
+        transform_matrix (3,3) = 1;
     }
+   transformation_matrix = new Eigen::Matrix4d (transform_matrix);
 }
 
 cv::Mat Kinect::getRGB()
@@ -214,9 +251,6 @@ void Kinect::rangeFrames(int lowTreshold,int highTreshold)
     delete tmpDepthMat;
     delete tmpRGBDMat;
 
-
-
-
 }
 
 void Kinect::cloudData(std::atomic<bool> & keep_running, std::atomic<bool> & compute_cloud_style )
@@ -236,6 +270,7 @@ void Kinect::cloudData(std::atomic<bool> & keep_running, std::atomic<bool> & com
         else
             this->depth2cloud(tmpCloud);
 
+        pcl::transformPointCloud(*tmpCloud,*tmpCloud,*transformation_matrix,true);
 
         if(!tmpCloud->empty())
         {
@@ -247,12 +282,10 @@ void Kinect::cloudData(std::atomic<bool> & keep_running, std::atomic<bool> & com
             }
         }
         tmpCloud->clear();
-        now=std::chrono::system_clock::now();
+//        now=std::chrono::system_clock::now();
 //        std::cout << "CLOUD: "<<this->getId()<<" "<< std::chrono::duration_cast<std::chrono::milliseconds>(now - then).count() << " ms" << std::endl;
     }
 }
-
-
 
 void Kinect::registered2cloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &tmpCloud)
 {
@@ -305,7 +338,6 @@ void Kinect::registered2cloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &tmpCloud)
     pcl::removeNaNFromPointCloud(*tmpCloud,*tmpCloud,removedPoints);
 }
 
-
 void Kinect::depth2cloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &tmpCloud)
 {
 
@@ -313,6 +345,7 @@ void Kinect::depth2cloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &tmpCloud)
     double fx = 3.714166846959092e+02;
     double cy = 1.675200071820351e+02;
     double cx = 2.473181663244050e+02;
+
 
     rangeFrames(50,800);
 
@@ -326,9 +359,11 @@ void Kinect::depth2cloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &tmpCloud)
             double Z = this->rangedDepthMat->at<float>(x_side, y_side) / 1;
             if(Z>0)
             {
-                Z=1.0 / (Z * -0.0030711016 + 3.3309495161);
-                x=(x_side-cx)*Z/fx;
-                y=(y_side-cy)*Z/fy;
+
+                Z=1.5 / (Z * -0.0030711016 + 3.3309495161);
+                //for common calibration -> registration2cloud x is swaped with y
+                x=(y_side-cy)*Z/fy;
+                y=(x_side-cx)*Z/fx;
                 z=Z;
             }
             else

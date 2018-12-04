@@ -101,6 +101,13 @@ void support::closeThreads()
 
 //CLOUD
 
+
+std::vector<Camera *> support::getConnectedCams()
+{
+    return connected_cams;
+}
+
+
 void support::cloudInit()
 {
     for(auto id=0;id<this->connectedCameras();id++)                                        // add connected kinects to vector cams
@@ -234,12 +241,11 @@ void support::pclUpdater(std::atomic<bool> &snap_running)
     while(snap_running)
     {
         this->camera2cloudDataTransfer();   // store cloud to pcl objects
-        merged_cloud->mergeClouds(this->mergeClouds(true));//! error when true, random fallings
-        pcl::copyPointCloud(*merged_cloud->getTransformedCloud(),cloudik);
+        merged_cloud->mergeClouds(this->mergeClouds(false));//! error when true, random fallings
 
-        if(!cloudik.empty())
+        if(!merged_cloud->getCloud()->empty())
             emit newCloud();
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
     }
 }
@@ -254,4 +260,11 @@ std::string support::IntToStr(int n)
     return result.str();
 }
 
+void support::changeComputeStyle(int state)
+{
+    if(state==0)
+        compute_cloud_style=false;
+    else
+        compute_cloud_style=true;
 
+}

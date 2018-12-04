@@ -68,11 +68,6 @@ SET(freenect2_INCLUDE_DIRS ${freenect2_INCLUDE_DIR})
 
 #compilator settings
 
-ADD_DEFINITIONS(
-    -std=c++14 # Or -std=c++0x
-    # O
-)
-
 set_target_properties(${PROJECT} PROPERTIES
         CXX_STANDARD_REQUIRED 14
         CXX_EXTENSIONS ON

@@ -41,13 +41,17 @@ public:
     std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> mergeClouds(bool transformed);
     std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> mergeClouds(bool transformed, std::vector<Eigen::Matrix4d> transform_matrix);
 
+    std::vector<Camera *> getConnectedCams();
+
     void viewerUpdater(std::atomic<bool> & snap_running);
     void pclUpdater(std::atomic<bool> &snap_running);
 
-    std::string  IntToStr(int n);
+    std::string IntToStr(int n);
+    void changeComputeStyle(int);
 
     std::atomic<bool> snap_running {true};
     pcl::PointCloud<pcl::PointXYZRGB> cloudik;
+    pclCloud * merged_cloud;
 
 private:
 
@@ -59,9 +63,9 @@ private:
     std::vector<std::thread>    viewer_threads;
 
 
+
     std::atomic<bool> compute_cloud_style {false};
     std::vector<pcl::PointCloud<pcl::PointXYZRGB>> merged_clouds;
-    pclCloud * merged_cloud;
 
 signals:
     void newRGBD(QPixmap pix,int id);
