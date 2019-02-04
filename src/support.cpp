@@ -47,7 +47,6 @@ void support::threadsInit()
 {
     this->threadCameraSnapping();
     this->threadComputePointCloud();
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
     this->threadFrameUpdater();
 }
 
@@ -230,6 +229,16 @@ void support::viewerUpdater(std::atomic<bool> &snap_running)
             emit newRGBD(QPixmap::fromImage(QImage(connected_cams[connected_cams_number]->getRGBD().data,connected_cams[connected_cams_number]->getRGBD().cols,connected_cams[connected_cams_number]->getRGBD().rows,connected_cams[connected_cams_number]->getRGBD().step,QImage::Format_RGBA8888).rgbSwapped()),connected_cams_number);
             emit newDepth(QPixmap::fromImage(QImage(tmpDepth.data,tmpDepth.cols,tmpDepth.rows,tmpDepth.step,QImage::Format_Indexed8)),connected_cams_number);
             emit newIR(QPixmap::fromImage(QImage(tmpIR.data,tmpIR.cols,tmpIR.rows,tmpIR.step,QImage::Format_Indexed8)),connected_cams_number);
+//            if(!connected_cams[connected_cams_number]->getRangedRGBD().empty())
+//            {
+//                emit newRangedRGBD(QPixmap::fromImage(QImage(connected_cams[connected_cams_number]->getRangedRGBD().data,connected_cams[connected_cams_number]->getRangedRGBD().cols,connected_cams[connected_cams_number]->getRangedRGBD().rows,connected_cams[connected_cams_number]->getRangedRGBD().step,QImage::Format_RGB888).rgbSwapped()),connected_cams_number);
+//            }
+//            if(!connected_cams[connected_cams_number]->getRangedDepth().empty())
+//            {
+//                tmpDepth=connected_cams[connected_cams_number]->getRangedDepth()/8;
+//                tmpDepth.convertTo(tmpDepth,CV_8UC1);
+//                emit newRangedDepth(QPixmap::fromImage(QImage(tmpDepth.data,tmpDepth.cols,tmpDepth.rows,tmpDepth.step,QImage::Format_Indexed8)),connected_cams_number);
+//            }
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
        }
     }
@@ -266,5 +275,30 @@ void support::changeComputeStyle(int state)
         compute_cloud_style=false;
     else
         compute_cloud_style=true;
+
+}
+
+void support::saveLUT(cv::Mat depth, cv::Mat rgbd, std::string filename,int counter)
+{
+#define ir_depth_width 512
+#define ir_depth_height 424
+    int i,j;
+
+    cv::imwrite("test/"+filename+"_"+IntToStr(counter)+".jpeg",rgbd);
+
+    ofstream myfile;
+    myfile.open("test/"+filename+"_"+IntToStr(counter)+".txt");
+
+    for(i = 0; i < depth.cols; i++)
+    {
+        for(j = 0; j < depth.rows; j++)
+        {
+            double orig = depth.at<float>(j,i);
+            myfile<<orig<<"\n";
+
+        }
+    }
+
+    myfile.close();
 
 }

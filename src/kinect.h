@@ -21,6 +21,7 @@
 
 #define chrono_counter
 
+#define EIGEN_MALLOC_ALREADY_ALIGNED 0
 
 #define camAttachTime 2000
 #define ir_depth_width 512
@@ -41,22 +42,24 @@ public:
     void        registration();                             // kinect register
     void        frames(std::atomic<bool> & keep_running);   // kinect wrapper to opencv
 
-    cv::Mat     getRGB();                                    // return opencv mat
-    cv::Mat     getDepth();
-    cv::Mat     getIR();
-    cv::Mat     getRGBD();
-    cv::Mat     getMask();
-    cv::Mat     getRangedDepth();
-    cv::Mat     getRangedRGBD();
+    cv::Mat     getRGB() { return *colorMat; }                                    // return opencv mat
+    cv::Mat     getDepth() { return *depthMat; }
+    cv::Mat     getIR() { return *irMat; }
+    cv::Mat     getRGBD() { return *rgbdMat; }
+    cv::Mat     getMask() { return *mask; }
+    cv::Mat     getRangedDepth() { return *rangedDepthMat; }
+    cv::Mat     getRangedRGBD() { return *rangedRGBDMat; }
+
     void        depth2cloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr  &tmpCloud);
     void        registered2cloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &tmpCloud);
 
     void        cloudData(std::atomic<bool> & keep_running, std::atomic<bool> &compute_cloud_style); // kinect wrapper to pcl
     void        rangeFrames(int lowTreshold, int highTreshold);
+    void        computeHist();
 
 
     void        cloudInit();                                // prepare cloud for copying
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr getCloudData();  // return pcl
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr getCloudData() { return cloud; }
 
     int getId();                                            // return information about camera
     std::string getSerial();
@@ -68,9 +71,13 @@ public:
     void unlockCloud();
     bool lockFrames(int lock_time);
     void unlockFrames();
-
+    
+    void matrix_rotat_koef();
+    
 
     ~Kinect();
+
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
 private:
 
@@ -96,11 +103,15 @@ private:
 
     cv::Mat * rangedDepthMat    = new cv::Mat( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_32FC1) );
     cv::Mat * rangedRGBDMat     = new cv::Mat( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_8UC4) );
+    cv::Mat * dDepthMat    = new cv::Mat( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_32FC1) );
+    cv::Mat * dRGBDMat     = new cv::Mat( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_8UC4) );
+
     cv::Mat * mask              = new cv::Mat( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_THRESH_BINARY) );
+    cv::Mat * histMat           = new cv::Mat( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_8UC1) );
 
 
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
-    Eigen::Matrix4d * transformation_matrix=nullptr;
+    Eigen::Matrix4d transformation_matrix;
 
     boost::property_tree::ptree pt;
     std::timed_mutex frame_mutex;
@@ -108,7 +119,7 @@ private:
     libfreenect2::Freenect2Device::ColorCameraParams    rgb_calib_params;
     libfreenect2::Freenect2Device::IrCameraParams       ir_calib_params;
 
-
-
+    int matrix[16]={0,0,1070,0,0,0,749,0,616};
+    double fmatrix[16]={0};
 };
 #endif // KINECT_H

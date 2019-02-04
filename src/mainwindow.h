@@ -42,30 +42,32 @@ public:
 private slots:
     void onNewRGBD(QPixmap newFrm,int i);
     void onNewDepth(QPixmap newFrm,int i);
+    void onNewRangedRGBD(QPixmap newFrm,int i);
+    void onNewRangedDepth(QPixmap newFrm,int i);
     void onNewIR(QPixmap newFrm, int i);
     void onNewCloud();
 
     void on_pushButton_clicked();
     void on_pushButton_2_clicked();
-
-    void on_pushButton_3_clicked();
-
-    void on_horizontalSlider_actionTriggered(int action);
-
-    void on_checkBox_toggled(bool checked);
-
     void on_checkBox_stateChanged(int arg1);
-
-    void on_pushButton_7_clicked();
-
     void on_save_all_button_clicked();
-
     void on_sequence_stop_clicked();
+
+    void on_cam_1_toggled(bool checked);
+
+    void on_cam_2_toggled(bool checked);
+
+    void on_cam_3_toggled(bool checked);
+
+    void on_cam_4_toggled(bool checked);
+
+    void on_recalibration_clicked(bool checked);
 
 protected:
     std::vector<support*> Support;
-    QGraphicsPixmapItem rgbd[4],depth[4],ir[4];
+    QGraphicsPixmapItem rgbd[4],depth[4],ir[4],ranged_rgbd[4],ranged_depth[4],histogram[4];
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr ethalon = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
     pcl::visualization::PCLVisualizer  * viewer=nullptr;
     int saved_frame_counter=0;
 private:

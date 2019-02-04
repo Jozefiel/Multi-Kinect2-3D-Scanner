@@ -1,4 +1,4 @@
-#ifndef PCL_H
+ #ifndef PCL_H
 #define PCL_H
 
 #include <pcl/visualization/cloud_viewer.h>
@@ -52,27 +52,6 @@ private:
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr transformed_cloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
 
     boost::property_tree::ptree pt;
-
-};
-
-/***********************************************************************************************************************************************************/
-class pclViewer
-{
-public:
-    pclViewer(int view_ports, std::string window_name);
-    ~pclViewer();
-
-    void pclAddCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud0, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud1, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud2);
-    void pclAddCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud, int);
-    void spinOnce();
-    void pclCopyCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr kinect_cloud);
-
-
-private:
-    pcl::visualization::PCLVisualizer *viewer =nullptr;
-    std::vector<int> viewPortsId;
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
-    int id=0;
 
 };
 

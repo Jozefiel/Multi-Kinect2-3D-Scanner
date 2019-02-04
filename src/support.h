@@ -48,7 +48,7 @@ public:
 
     std::string IntToStr(int n);
     void changeComputeStyle(int);
-
+    void saveLUT(cv::Mat depth, cv::Mat rgbd, std::string filename, int counter);
     std::atomic<bool> snap_running {true};
     pcl::PointCloud<pcl::PointXYZRGB> cloudik;
     pclCloud * merged_cloud;
@@ -71,6 +71,8 @@ signals:
     void newRGBD(QPixmap pix,int id);
     void newDepth(QPixmap pix,int id);
     void newIR(QPixmap pix,int id);
+    void newRangedRGBD(QPixmap pix,int id);
+    void newRangedDepth(QPixmap pix,int id);
     void newCloud();
 
 };
