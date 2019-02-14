@@ -11,6 +11,8 @@
 #include <mutex>
 #include <chrono>
 #include <thread>
+#include <fstream>
+
 
 #include <libfreenect2/libfreenect2.hpp>
 #include <libfreenect2/frame_listener_impl.h>
@@ -58,7 +60,10 @@ public:
     void        computeHist();
 
 
-    void        cloudInit();                                // prepare cloud for copying
+    void saveLUT(cv::Mat depth, cv::Mat rgbd, std::string filename,int counter);
+
+
+    void cloudInit(size_t size);                                // prepare cloud for copying
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr getCloudData() { return cloud; }
 
     int getId();                                            // return information about camera
@@ -84,7 +89,7 @@ private:
     std::string serial, camera_type;
     int id=0;
 
-    libfreenect2::PacketPipeline * pPipeline            = nullptr;
+    libfreenect2::PacketPipeline * pPipeline            = new libfreenect2::OpenGLPacketPipeline();
     libfreenect2::Freenect2 * pFreenect                 = nullptr;
     libfreenect2::Freenect2Device * pDev                = nullptr;
     libfreenect2::Registration * pRegistrated           = nullptr;
@@ -101,10 +106,14 @@ private:
     cv::Mat * colorMat          = new cv::Mat( cv::Mat::zeros(1082, 1920, CV_8UC4) );
     cv::Mat * rgbdMat           = new cv::Mat( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_8UC4) );
 
+    cv::Mat * dDepthMat          = new cv::Mat( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_32FC1) );
+    cv::Mat * dIrMat             = new cv::Mat( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_32FC1) );
+    cv::Mat * dColorMat          = new cv::Mat( cv::Mat::zeros(1082, 1920, CV_8UC4) );
+    cv::Mat * dRGBDMat           = new cv::Mat( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_8UC4) );
+
     cv::Mat * rangedDepthMat    = new cv::Mat( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_32FC1) );
     cv::Mat * rangedRGBDMat     = new cv::Mat( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_8UC4) );
-    cv::Mat * dDepthMat    = new cv::Mat( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_32FC1) );
-    cv::Mat * dRGBDMat     = new cv::Mat( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_8UC4) );
+
 
     cv::Mat * mask              = new cv::Mat( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_THRESH_BINARY) );
     cv::Mat * histMat           = new cv::Mat( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_8UC1) );

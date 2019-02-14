@@ -67,19 +67,9 @@ void pclCloud::pclCopyCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cam_cloud)
     }
 }
 
-pcl::PointCloud<pcl::PointXYZRGB>::Ptr pclCloud::getCloud()
-{
-    return cloud;
-}
-
-pcl::PointCloud<pcl::PointXYZRGB>::Ptr pclCloud::getTransformedCloud()
-{
-    return transformed_cloud;
-}
-
 void pclCloud::setTransformationMatrix(Eigen::Matrix4d transform)
 {
-    this->transform_matrix (0,0) = transform (0,0);
+    transform_matrix (0,0) = transform (0,0);
     transform_matrix (0,1) = transform (0,1);
     transform_matrix (0,2) = transform (0,2);
     transform_matrix (0,3) = transform (0,3);
@@ -135,6 +125,17 @@ void pclCloud::removeOutliers(int meanK, double mulTresh)
     sor.filter(*cloud);
 }
 
+void pclCloud::computeNormals()
+{
+    pcl::NormalEstimation<pcl::PointXYZRGB, pcl::Normal> ne;
+    ne.setInputCloud(cloud);
+    pcl::search::KdTree<pcl::PointXYZRGB>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZRGB> ());
+    ne.setSearchMethod (tree);
+    ne.setRadiusSearch (0.03);
+    ne.compute (*normals_cloud);
+}
+
+
 void pclCloud::mergeClouds(std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> clouds)
 {
     cloud->clear();
@@ -162,8 +163,6 @@ void pclCloud::creteMesh(int kSearch)
       normal_estimation.compute(*cloud_normals);
       pcl::io::savePCDFile("cloud_normals.pcd",*cloud_normals);
       pcl::io::savePLYFile("cloud_normals.ply",*cloud_normals);
-
-
 }
 
 pclCloud::~pclCloud()

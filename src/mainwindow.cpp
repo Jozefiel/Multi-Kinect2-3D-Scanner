@@ -83,8 +83,15 @@ void MainWindow::onNewCloud()
 {
 
     viewer->removePointCloud("cloud");
+    viewer->removePointCloud("normals");
     viewer->addPointCloud(Support[0]->merged_cloud->getCloud(), "cloud");
-    viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "cloud");
+//    Support[0]->merged_cloud->computeNormals();
+
+//    viewer->addPointCloudNormals<pcl::PointXYZRGB, pcl::Normal>(Support[0]->merged_cloud->getCloud(),Support[0]->merged_cloud->getCloudNormals(),10,0.03, "normals");
+
+    viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2 , "cloud");
+
+
     ui->qvtkWidget->update();
 }
 
@@ -143,6 +150,7 @@ void MainWindow::on_save_all_button_clicked()
 
     for(int i=0; i < Support[0]->getConnectedCams().size();i++)
     {
+
         cv::Mat tmpIR;
         Support[0]->getConnectedCams()[i]->getIR().convertTo(tmpIR,CV_8UC1,255,0);
 
@@ -153,13 +161,16 @@ void MainWindow::on_save_all_button_clicked()
         if(!Support[0]->getClouds()[i].getCloud()->empty())
         {
             pcl::io::savePLYFileBinary("output/CLOUDS/single/"+Support[0]->IntToStr(saved_frame_counter)+"_"+Support[0]->IntToStr(i)+".ply",*Support[0]->getClouds()[i].getCloud());
-           // pcl::io::savePCDFile("output/CLOUDS/single/"+Support[0]->IntToStr(saved_frame_counter)+"_"+Support[0]->IntToStr(i)+".pcd",*Support[0]->getClouds()[i].getCloud());
+            pcl::io::savePCDFileASCII("output/CLOUDS/single/"+Support[0]->IntToStr(saved_frame_counter)+"_"+Support[0]->IntToStr(i)+".pcd",*Support[0]->getClouds()[i].getCloud());
 
         }
-        //pcl::io::savePCDFile("output/CLOUDS/cloud_"+Support[0]->IntToStr(saved_frame_counter)+".pcd",*Support[0]->merged_cloud->getCloud());
-        pcl::io::savePLYFileBinary("output/CLOUDS/cloud_"+Support[0]->IntToStr(saved_frame_counter)+".ply",*Support[0]->merged_cloud->getCloud());
 
-        Support[0]->saveLUT(Support[0]->getConnectedCams()[i]->getDepth(), Support[0]->getConnectedCams()[i]->getRGBD(),Support[0]->IntToStr(i),saved_frame_counter);
+        //Support[0]->saveLUT(Support[0]->getConnectedCams()[i]->getDepth(), Support[0]->getConnectedCams()[i]->getRGBD(),Support[0]->IntToStr(i),saved_frame_counter);
+    }
+    if(!Support[0]->merged_cloud->getCloud()->empty())
+    {
+        //pcl::io::savePCDFileASCII("output/CLOUDS/cloud_"+Support[0]->IntToStr(saved_frame_counter)+".pcd",*Support[0]->merged_cloud->getCloud());
+        pcl::io::savePLYFileBinary("output/CLOUDS/cloud_"+Support[0]->IntToStr(saved_frame_counter)+".ply",*Support[0]->merged_cloud->getCloud());
     }
 
 

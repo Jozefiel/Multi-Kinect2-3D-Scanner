@@ -106,7 +106,6 @@ std::vector<Camera *> support::getConnectedCams()
     return connected_cams;
 }
 
-
 void support::cloudInit()
 {
     for(auto id=0;id<this->connectedCameras();id++)                                        // add connected kinects to vector cams

@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
   app.setWindowIcon(appIcon);
 
   MainWindow mainWindow;
-  mainWindow.show();
+  mainWindow.showMaximized();
 
   return app.exec();
 }

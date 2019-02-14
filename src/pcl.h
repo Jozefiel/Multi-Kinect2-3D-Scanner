@@ -10,6 +10,8 @@
 #include <pcl/registration/icp.h>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/filters/statistical_outlier_removal.h>
+#include <pcl/2d/morphology.h>
+
 
 #include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/features/normal_3d.h>
@@ -30,16 +32,21 @@ public:
 
     void pclAddCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud, int);
     void pclCopyCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr kinect_cloud);
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr getCloud();
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr getCloud() { return cloud; }
 
 
     void setTransformationMatrix(Eigen::Matrix4d transform);
     Eigen::Matrix4d getTransformationMatrix();
     void transformPointCloud();
     void transformPointCloud(Eigen::Matrix4d transform);
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr getTransformedCloud();
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr getTransformedCloud() { return transformed_cloud; }
     void removeOutliers(int meanK, double mulTresh);
     void mergeClouds(std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> clouds);
+
+
+    void computeNormals();
+    pcl::PointCloud<pcl::Normal>::Ptr getCloudNormals() { return normals_cloud; }
+
     void creteMesh(int kSearch);
 
 
@@ -50,6 +57,7 @@ private:
     Eigen::Matrix4d transform_matrix;
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr transformed_cloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
+    pcl::PointCloud<pcl::Normal>::Ptr normals_cloud = pcl::PointCloud<pcl::Normal>::Ptr(new pcl::PointCloud<pcl::Normal>);
 
     boost::property_tree::ptree pt;
 

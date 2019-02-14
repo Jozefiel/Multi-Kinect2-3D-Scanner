@@ -20,7 +20,10 @@
 #include <pcl/io/pcd_io.h>
 #include <pcl/io/ply_io.h>
 #include <pcl/io/vtk_io.h>
+#include <pcl/features/normal_3d.h>
 #include <vtkRenderWindow.h>
+#include <pcl/point_types.h>
+
 
 #include "camera.h"
 #include "kinect.h"
