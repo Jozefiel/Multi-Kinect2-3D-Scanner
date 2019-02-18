@@ -135,7 +135,6 @@ void pclCloud::computeNormals()
     ne.compute (*normals_cloud);
 }
 
-
 void pclCloud::mergeClouds(std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> clouds)
 {
     cloud->clear();
@@ -168,5 +167,4 @@ void pclCloud::creteMesh(int kSearch)
 pclCloud::~pclCloud()
 {
 }
-
 

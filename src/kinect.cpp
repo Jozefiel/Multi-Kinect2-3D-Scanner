@@ -6,7 +6,7 @@
 #define minimal_depth 0
 #define maximal_depth 0.9
 #define mutex_lock_time 15
-
+#define frame_mutex_lock_time 5
 Kinect::Kinect(libfreenect2::Freenect2 * _freenect,int _id)
 {
     try
@@ -47,16 +47,6 @@ Kinect::Kinect(libfreenect2::Freenect2 * _freenect,int _id)
     }
 }
 
-int Kinect::getId()
-{
-    return id;
-}
-
-std::string Kinect::getSerial()
-{
-    return serial;
-}
-
 void Kinect::start()
 {
     std::cout<<"Kinect start: "<<this->pDev->getSerialNumber()<<std::endl;
@@ -78,29 +68,31 @@ void Kinect::registration()
 void Kinect::frames(std::atomic<bool> & keep_running)
 {
     std::chrono::system_clock::time_point then, now;
-
-
     while(keep_running)
     {
+//        then=std::chrono::system_clock::now();
         if(this->pListener->waitForNewFrame(frame,camAttachTime))
         {
+            if(frame_mutex.try_lock_for(std::chrono::milliseconds(frame_mutex_lock_time)))
+            {
+                libfreenect2::Frame *depth=frame[libfreenect2::Frame::Depth];
+                libfreenect2::Frame *ir=frame[libfreenect2::Frame::Ir];
+                libfreenect2::Frame *rgb=frame[libfreenect2::Frame::Color];
 
- //           then=std::chrono::system_clock::now();
+                this->pRegistrated->undistortDepth(depth,new_libfreenect_frames.undistortedDepth);
+                this->pRegistrated->apply(rgb,depth, new_libfreenect_frames.undistortedDepth, new_libfreenect_frames.registered,true, new_libfreenect_frames.depth2rgb);
 
-            libfreenect2::Frame *depth=frame[libfreenect2::Frame::Depth];
-            libfreenect2::Frame *ir=frame[libfreenect2::Frame::Ir];
-            libfreenect2::Frame *rgb=frame[libfreenect2::Frame::Color];
+                cv::Mat(ir->height, ir->width, CV_32FC1, ir->data).copyTo(*this->new_cam_frames.irMat);
+                cv::Mat(rgb->height, rgb->width, CV_8UC4, rgb->data).copyTo(*this->new_cam_frames.colorMat);
+                cv::Mat(new_libfreenect_frames.undistortedDepth->height,  new_libfreenect_frames.undistortedDepth->width, CV_32FC1, new_libfreenect_frames.undistortedDepth->data).copyTo(* this->new_cam_frames.depthMat);
+                cv::Mat(new_libfreenect_frames.registered->height,  new_libfreenect_frames.registered->width, CV_8UC4, new_libfreenect_frames.registered->data).copyTo(* this->new_cam_frames.rgbdMat);
 
-            cv::Mat(depth->height, depth->width, CV_32FC1, depth->data).copyTo(*this->depthMat);
-            cv::Mat(ir->height, ir->width, CV_32FC1, ir->data).copyTo(*this->irMat);
-            cv::Mat(rgb->height, rgb->width, CV_8UC4, rgb->data).copyTo(*this->colorMat);
-            this->pRegistrated->undistortDepth(depth,undistortedDepth);
+//              now=std::chrono::system_clock::now();
+//              std::cout << "FRAME: "<<this->getId()<<" "<< std::chrono::duration_cast<std::chrono::milliseconds>(now - then).count() << " ms" << std::endl;
 
-            this->pRegistrated->apply(rgb,depth, this->undistorted, this->registered,true, this->depth2rgb);
-            cv::Mat( this->undistortedDepth->height,  this->undistortedDepth->width, CV_32FC1, undistortedDepth->data).copyTo(* this->depthMat);
-            cv::Mat( this->registered->height,  this->registered->width, CV_8UC4, registered->data).copyTo(* this->rgbdMat);
-
-            pListener->release(frame);
+                pListener->release(frame);
+                frame_mutex.unlock();
+            }
         }
         else
         {
@@ -109,9 +101,24 @@ void Kinect::frames(std::atomic<bool> & keep_running)
     }
 }
 
-std::string Kinect::getCamType()
+void Kinect::cloneFrames()
 {
-    return camera_type;
+    std::unique_lock<std::timed_mutex> frame_lock(frame_mutex,std::try_to_lock);
+
+//    std::chrono::system_clock::time_point then, now;
+//    then=std::chrono::system_clock::now();
+
+    if(frame_lock)
+    {
+
+//        cam_frames=new_cam_frames;
+        memcpy(&new_cam_frames,&cam_frames,sizeof (cam_frames));
+        memcpy(&new_libfreenect_frames,&libfreenect_frames,sizeof (libfreenect_frames));
+
+//        libfreenect_frames=new_libfreenect_frames;
+//        now=std::chrono::system_clock::now();
+//        std::cout << "COPY FRAME: "<<this->getId()<<" "<< std::chrono::duration_cast<std::chrono::milliseconds>(now - then).count() << " ms" << std::endl;
+    }
 }
 
 void Kinect::loadCamParams()
@@ -180,32 +187,39 @@ void Kinect::loadCamParams()
 
 void Kinect::cloudInit(size_t size)
 {
-    cloud->clear();
-    cloud->is_dense = false;
-    cloud->points.resize(size);
+    new_cam_frames.cloud->clear();
+    new_cam_frames.cloud->is_dense = false;
+    new_cam_frames.cloud->points.resize(size);
 }
 
 void Kinect::rangeFrames(int lowTreshold,int highTreshold)
 {
-    rangedDepthMat->release();
-    rangedRGBDMat->release();
-    cv::Mat *tmpDepthMat=new cv::Mat(*depthMat);
-    cv::Mat *tmpRGBDMat=new cv::Mat(*rgbdMat);
+
+    //new_libfreenect_frames.registered->data=new_cam_frames.rgbdMat->data;
+
+    cam_frames.rangedDepthMat->release();
+    cam_frames.rangedRGBDMat->release();
+
+    cv::Mat *tmpDepthMat=new cv::Mat(*cam_frames.depthMat);
+    cv::Mat *tmpRGBDMat=new cv::Mat(*cam_frames.rgbdMat);
 
     tmpRGBDMat->convertTo(*tmpRGBDMat,CV_8UC3);
     cv::cvtColor(*tmpRGBDMat,*tmpRGBDMat,CV_RGBA2RGB);
 
-    cv::inRange(*tmpDepthMat,lowTreshold,highTreshold,*mask);
+    cv::inRange(*tmpDepthMat,lowTreshold,highTreshold,*cam_frames.mask);
 
     cv::Mat element = getStructuringElement( cv::MORPH_RECT,cv::Size( 4*1 + 1, 4*1+1 ),cv::Point( 4, 4 ) );
     /// Apply the dilation operation
-    cv::erode( *mask, *mask, element );
+    cv::erode( *cam_frames.mask, *cam_frames.mask, element );
 
     cv::Mat tmpBilateralDepthMat;
     cv::bilateralFilter( *tmpDepthMat, tmpBilateralDepthMat, 7, 15, 15 );
 
-    tmpBilateralDepthMat.copyTo(*rangedDepthMat,*mask);
-    tmpRGBDMat->copyTo(*rangedRGBDMat,*mask);
+    tmpBilateralDepthMat.copyTo(*cam_frames.rangedDepthMat,*cam_frames.mask);
+    tmpRGBDMat->copyTo(*cam_frames.rangedRGBDMat,*cam_frames.mask);
+
+    libfreenect_frames.undistortedDepth->data   = cam_frames.rangedDepthMat->data;
+//    libfreenect_frames.registered->data         = new_cam_frames.rangedRGBDMat->data;
 
     tmpDepthMat->release();
     tmpRGBDMat->release();
@@ -215,23 +229,21 @@ void Kinect::rangeFrames(int lowTreshold,int highTreshold)
 
 void Kinect::computeHist()
 {
-//    int histSize = 4096;
-//    float range[] = { 0, 256 }; //the upper boundary is exclusive
-//    const float* histRange = { range };
-//    bool uniform = true, accumulate = false;
-//    Mat b_hist;
-//    cv::calcHist( rangedDepthMat, 1, 0, cv::Mat(), histMat, 1, &histSize, &histRange, uniform, accumulate );
+    int histSize = 4096;
+    float range[] = { 0, 256 }; //the upper boundary is exclusive
+    const float* histRange = { range };
+    bool uniform = true, accumulate = false;
+    cv::Mat b_hist;
+    cv::calcHist( cam_frames.rangedDepthMat, 1, nullptr, cv::Mat(), b_hist, 1, &histSize, &histRange, uniform, accumulate );
 }
 
 void Kinect::cloudData(std::atomic<bool> & keep_running, std::atomic<bool> & compute_cloud_style )
 {
     std::chrono::system_clock::time_point then, now;
-
     Eigen::Matrix4d transform = transformation_matrix;
 
     while(keep_running)
     {
-
         then=std::chrono::system_clock::now();
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr tmpCloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
         tmpCloud->width = static_cast<uint32_t>(ir_depth_width);
@@ -239,9 +251,8 @@ void Kinect::cloudData(std::atomic<bool> & keep_running, std::atomic<bool> & com
         tmpCloud->is_dense = false;
         tmpCloud->points.resize( tmpCloud->width* tmpCloud->height);
 
-        rangeFrames(50,800);
-
-
+        cloneFrames();
+        rangeFrames(40,800);
         if(compute_cloud_style==false)
             this->registered2cloud(tmpCloud);
         else
@@ -254,7 +265,7 @@ void Kinect::cloudData(std::atomic<bool> & keep_running, std::atomic<bool> & com
             if(cloud_mutex.try_lock_for(std::chrono::milliseconds(mutex_lock_time)))
             {
                 cloudInit(tmpCloud->points.size());
-                pcl::copyPointCloud(*tmpCloud,*cloud);
+                pcl::copyPointCloud(*tmpCloud,*new_cam_frames.cloud);
                 cloud_mutex.unlock();
             }
         }
@@ -273,15 +284,17 @@ void Kinect::registered2cloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &tmpCloud)
         for(int y_side=0;y_side<ir_depth_height;y_side++)
         {
             float rgb;
-            pRegistrated->getPointXYZRGB(undistorted,registered,y_side,x_side,x,y,z,rgb);
+            pRegistrated->getPointXYZRGB(libfreenect_frames.undistortedDepth,libfreenect_frames.registered,y_side,x_side,x,y,z,rgb);
 
+//            std::cout<<x<<" "<<y<<""<<z<<std::endl;
             const uint8_t *p = reinterpret_cast<uint8_t*>(&rgb);
             uint8_t b = p[0];
             uint8_t g = p[1];
             uint8_t r = p[2];
 
- //           if((r<150 && b <150 && g<150) && (r >10 && b >10 && g >10) )
-            if(this->mask->at<bool>(y_side,x_side)==true)
+//          if(this->cam_frames.mask->at<bool>(y_side,x_side)==true)
+
+            if((r<150 && b <150 && g<150) && (r >10 && b >10 && g >10))
             {
                 if(std::isinf(x) || std::isinf(y) ||  std::isinf(z) )
                 {
@@ -315,8 +328,8 @@ void Kinect::registered2cloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &tmpCloud)
     }
     std::vector<int> removedPoints;
     pcl::removeNaNFromPointCloud(*tmpCloud,*tmpCloud,removedPoints);
-}
 
+}
 void Kinect::depth2cloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &tmpCloud)
 {
 
@@ -339,7 +352,7 @@ void Kinect::depth2cloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &tmpCloud)
     {
         for (int x_side = 0; x_side < ir_depth_height; x_side++)
         {
-            double Z = this->rangedDepthMat->at<float>(x_side, y_side) / 1;
+            double Z = this->new_cam_frames.rangedDepthMat->at<float>(x_side, y_side) / 1;
             if(Z>0)
             {
                 Z= scale /(Z * -0.0030711016 + 3.3309495161);
@@ -359,9 +372,9 @@ void Kinect::depth2cloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &tmpCloud)
             tmpCloud->points[n].x=x;
             tmpCloud->points[n].y=y;
             tmpCloud->points[n].z=z;
-            tmpCloud->points[n].r=this->rangedRGBDMat->at<cv::Vec3b>(x_side,y_side)[2];
-            tmpCloud->points[n].g=this->rangedRGBDMat->at<cv::Vec3b>(x_side,y_side)[1];
-            tmpCloud->points[n].b=this->rangedRGBDMat->at<cv::Vec3b>(x_side,y_side)[0];
+            tmpCloud->points[n].r=this->new_cam_frames.rangedRGBDMat->at<cv::Vec3b>(x_side,y_side)[2];
+            tmpCloud->points[n].g=this->new_cam_frames.rangedRGBDMat->at<cv::Vec3b>(x_side,y_side)[1];
+            tmpCloud->points[n].b=this->new_cam_frames.rangedRGBDMat->at<cv::Vec3b>(x_side,y_side)[0];
             n++;
         }
     }
@@ -404,12 +417,3 @@ Kinect::~Kinect()
     delete this->pRegistrated;
 }
 
-void Kinect::matrix_rotat_koef()
-{
-#define MAX_TRESHOLD 20000
-    namedWindow("Rotation"+getSerial(),cv::WINDOW_AUTOSIZE);
-    cv::createTrackbar( "[0,0]x", "Rotation"+getSerial(), &matrix[0], MAX_TRESHOLD);
-    cv::createTrackbar( "[0,1]y", "Rotation"+getSerial(), &matrix[1], MAX_TRESHOLD);
-    cv::createTrackbar( "[0,2]z", "Rotation"+getSerial(), &matrix[2], MAX_TRESHOLD);
-    cv::createTrackbar( "[0,3]x", "Rotation"+getSerial(), &matrix[3], MAX_TRESHOLD);
-}
