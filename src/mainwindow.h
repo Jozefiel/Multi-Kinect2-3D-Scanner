@@ -48,6 +48,7 @@ private slots:
     void onNewRangedRGBD(QPixmap newFrm,int i);
     void onNewRangedDepth(QPixmap newFrm,int i);
     void onNewIR(QPixmap newFrm, int i);
+    void onNewHist(QPixmap newFrm, int i);
     void onNewCloud();
 
     void on_pushButton_clicked();

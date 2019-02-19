@@ -19,6 +19,7 @@ MainWindow::MainWindow(QWidget *parent) :QMainWindow(parent), ui(new Ui::MainWin
     ui->graphicsView_ir_0->setScene(new QGraphicsScene(this));
     ui->graphicsView_ranged_rgbd_0->setScene(new QGraphicsScene(this));
     ui->graphicsView_ranged_depth_0->setScene(new QGraphicsScene(this));
+    ui->graphicsView_histogram_0->setScene(new QGraphicsScene(this));
 
 
     ui->graphicsView_rgbd_1->setScene(new QGraphicsScene(this));
@@ -26,6 +27,7 @@ MainWindow::MainWindow(QWidget *parent) :QMainWindow(parent), ui(new Ui::MainWin
     ui->graphicsView_ir_1->setScene(new QGraphicsScene(this));
     ui->graphicsView_ranged_rgbd_1->setScene(new QGraphicsScene(this));
     ui->graphicsView_ranged_depth_1->setScene(new QGraphicsScene(this));
+    ui->graphicsView_histogram_1->setScene(new QGraphicsScene(this));
 
 
     ui->graphicsView_rgbd_2->setScene(new QGraphicsScene(this));
@@ -33,6 +35,7 @@ MainWindow::MainWindow(QWidget *parent) :QMainWindow(parent), ui(new Ui::MainWin
     ui->graphicsView_ir_2->setScene(new QGraphicsScene(this));
     ui->graphicsView_ranged_rgbd_2->setScene(new QGraphicsScene(this));
     ui->graphicsView_ranged_depth_2->setScene(new QGraphicsScene(this));
+    ui->graphicsView_histogram_2->setScene(new QGraphicsScene(this));
 
 
     connect(Support[0], SIGNAL(newRGBD(QPixmap,int)), this, SLOT(onNewRGBD(QPixmap,int)));
@@ -40,6 +43,7 @@ MainWindow::MainWindow(QWidget *parent) :QMainWindow(parent), ui(new Ui::MainWin
     connect(Support[0], SIGNAL(newIR(QPixmap,int)), this, SLOT(onNewIR(QPixmap,int)));
     connect(Support[0], SIGNAL(newRangedRGBD(QPixmap,int)), this,  SLOT(onNewRangedRGBD(QPixmap,int)));
     connect(Support[0], SIGNAL(newRangedDepth(QPixmap,int)), this, SLOT(onNewRangedDepth(QPixmap,int)));
+    connect(Support[0], SIGNAL(newHist(QPixmap,int)), this, SLOT(onNewHist(QPixmap,int)));
 
 
     connect(Support[0], SIGNAL(newCloud()), this, SLOT(onNewCloud()));
@@ -49,12 +53,15 @@ MainWindow::MainWindow(QWidget *parent) :QMainWindow(parent), ui(new Ui::MainWin
     ui->graphicsView_ir_0->scene()->addItem(&ir[0]);
     ui->graphicsView_ranged_depth_0->scene()->addItem(&ranged_depth[0]);
     ui->graphicsView_ranged_rgbd_0->scene()->addItem(&ranged_rgbd[0]);
+    ui->graphicsView_histogram_0->scene()->addItem(&histogram[0]);
+
 
     ui->graphicsView_rgbd_1->scene()->addItem(&rgbd[1]);
     ui->graphicsView_depth_1->scene()->addItem(&depth[1]);
     ui->graphicsView_ir_1->scene()->addItem(&ir[1]);
     ui->graphicsView_ranged_depth_1->scene()->addItem(&ranged_depth[1]);
     ui->graphicsView_ranged_rgbd_1->scene()->addItem(&ranged_rgbd[1]);
+    ui->graphicsView_histogram_1->scene()->addItem(&histogram[1]);
 
 
     ui->graphicsView_rgbd_2->scene()->addItem(&rgbd[2]);
@@ -62,6 +69,7 @@ MainWindow::MainWindow(QWidget *parent) :QMainWindow(parent), ui(new Ui::MainWin
     ui->graphicsView_ir_2->scene()->addItem(&ir[2]);
     ui->graphicsView_ranged_depth_2->scene()->addItem(&ranged_depth[2]);
     ui->graphicsView_ranged_rgbd_2->scene()->addItem(&ranged_rgbd[2]);
+    ui->graphicsView_histogram_2->scene()->addItem(&histogram[2]);
 
     viewer=new pcl::visualization::PCLVisualizer("viewer",false);
     ui->qvtkWidget->SetRenderWindow(viewer->getRenderWindow());
@@ -122,6 +130,13 @@ void MainWindow::onNewIR(QPixmap newFrm,int i)
 {
     ir[i].setPixmap(newFrm);
 }
+
+void MainWindow::onNewHist(QPixmap newFrm,int i)
+{
+    if(!newFrm.isNull())
+        histogram[i].setPixmap(newFrm);
+}
+
 
 void MainWindow::on_pushButton_clicked()
 {

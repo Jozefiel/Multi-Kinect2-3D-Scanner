@@ -54,8 +54,8 @@ public:
 
     virtual cv::Mat         getMask()       = 0;
     virtual cv::Mat         getRangedRGBD() = 0;
-    virtual cv::Mat         getRangedDepth()    = 0;
-
+    virtual cv::Mat         getRangedDepth()  = 0;
+    virtual cv::Mat         getHistogram()    = 0;
 
     virtual pcl::PointCloud<pcl::PointXYZRGB>::Ptr getCloudData()   = 0;
 
@@ -69,7 +69,7 @@ public:
         cv::Mat * rangedDepthMat    = new cv::Mat( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_32FC1) );
         cv::Mat * rangedRGBDMat     = new cv::Mat( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_8UC4) );
         cv::Mat * mask              = new cv::Mat( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_THRESH_BINARY) );
-        cv::Mat * histMat           = new cv::Mat( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_8UC1) );
+        cv::Mat * histMat           = new cv::Mat( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_8UC3) );
 
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
     };

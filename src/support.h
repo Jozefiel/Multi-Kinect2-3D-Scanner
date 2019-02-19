@@ -73,6 +73,7 @@ signals:
     void newIR(QPixmap pix,int id);
     void newRangedRGBD(QPixmap pix,int id);
     void newRangedDepth(QPixmap pix,int id);
+    void newHist(QPixmap pix,int id);
     void newCloud();
 
 };

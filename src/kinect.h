@@ -32,6 +32,10 @@
 #define color_width 1920
 #define color_height 1080+2
 #define color_bpp 4
+#define minimal_depth 350
+#define maximal_depth 800
+#define mutex_lock_time 15
+#define frame_mutex_lock_time 5
 
 class Kinect : public Camera
 {
@@ -53,12 +57,14 @@ public:
     cv::Mat     getMask()        { return *cam_frames.mask; }
     cv::Mat     getRangedDepth() { return *cam_frames.rangedDepthMat; }
     cv::Mat     getRangedRGBD()  { return *cam_frames.rangedRGBDMat; }
-
+    cv::Mat     getHistogram()   { return *cam_frames.histMat; }
     void        depth2cloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr  &tmpCloud);
     void        registered2cloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &tmpCloud);
 
     void        cloudData(std::atomic<bool> & keep_running, std::atomic<bool> &compute_cloud_style); // kinect wrapper to pcl
-    void        rangeFrames(int lowTreshold, int highTreshold);
+    void        filterFrames();
+    void        rangeFrames(cv::Mat * rangedRGBD, cv::Mat * rgbd);
+
     void        computeHist();
 
 
