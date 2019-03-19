@@ -6,7 +6,7 @@
 #include <string>
 #include <iostream>
 #include <stdio.h>
-#include <math.h>
+#include <cmath>
 #include <atomic>
 #include <mutex>
 #include <chrono>
@@ -58,13 +58,14 @@ public:
     cv::Mat     getRangedDepth() { return *cam_frames.rangedDepthMat; }
     cv::Mat     getRangedRGBD()  { return *cam_frames.rangedRGBDMat; }
     cv::Mat     getHistogram()   { return *cam_frames.histMat; }
+
+    camera_frames   getFrames()  { return cam_frames; }
+
     void        depth2cloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr  &tmpCloud);
     void        registered2cloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &tmpCloud);
 
     void        cloudData(std::atomic<bool> & keep_running, std::atomic<bool> &compute_cloud_style); // kinect wrapper to pcl
     void        filterFrames();
-    void        rangeFrames(cv::Mat * rangedRGBD, cv::Mat * rgbd);
-
     void        computeHist();
 
 

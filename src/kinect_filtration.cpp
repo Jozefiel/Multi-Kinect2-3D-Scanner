@@ -3,21 +3,18 @@
 
 void Kinect::filterFrames()
 {
-    cam_frames.rangedDepthMat->release();
-    cam_frames.rangedRGBDMat->release();
-
     cv::Mat *tmpDepthMat = new cv::Mat(new_libfreenect_frames.undistortedDepth->height,  new_libfreenect_frames.undistortedDepth->width, CV_32FC1, new_libfreenect_frames.undistortedDepth->data);
     cv::Mat *tmpRGBDMat  = new cv::Mat(new_libfreenect_frames.registered->height,  new_libfreenect_frames.registered->width, CV_8UC4, new_libfreenect_frames.registered->data);
+    cv::Mat *tmpMask     = new cv::Mat( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_THRESH_BINARY) );
 
-    rangeFrames(tmpDepthMat, tmpRGBDMat);
+    rangeFrames(tmpDepthMat, tmpRGBDMat,tmpMask);
+    morphFrames(tmpDepthMat, tmpRGBDMat,tmpMask);
 
-    cv::Mat element = getStructuringElement( cv::MORPH_RECT,cv::Size( 4*1 + 1, 4*1+1 ),cv::Point( 4, 4 ) );
-    /// Apply the dilation operation
-    cv::erode( *cam_frames.mask, *cam_frames.mask, element );
+    cam_frames.rangedDepthMat->release();
+    cam_frames.rangedRGBDMat->release();
+    cam_frames.mask->release();
 
-    cv::Mat tmpBilateralDepthMat;
-    cv::bilateralFilter( *tmpDepthMat, tmpBilateralDepthMat, 7, 15, 15 );
-
+    tmpMask->copyTo(*cam_frames.mask);
     tmpDepthMat->copyTo(*cam_frames.rangedDepthMat,*cam_frames.mask);
     tmpRGBDMat->copyTo(*cam_frames.rangedRGBDMat,*cam_frames.mask);
 
@@ -31,14 +28,10 @@ void Kinect::filterFrames()
 
     tmpDepthMat->release();
     tmpRGBDMat->release();
+    tmpMask->release();
     delete tmpDepthMat;
     delete tmpRGBDMat;
+    delete tmpMask;
 }
 
-void Kinect::rangeFrames(cv::Mat * tmpDepthMat, cv::Mat * tmpRGBDMat)
-{
-    tmpRGBDMat->convertTo(*tmpRGBDMat,CV_8UC3);
-    cv::cvtColor(*tmpRGBDMat,*tmpRGBDMat,CV_RGBA2RGB);
-    cv::inRange(*tmpDepthMat,80,800,*cam_frames.mask);
-}
 

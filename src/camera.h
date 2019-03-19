@@ -26,6 +26,21 @@ class Camera
 {
 public:
 
+    struct camera_frames
+    {
+        cv::Mat * depthMat          = new cv::Mat( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_32FC1) );
+        cv::Mat * irMat             = new cv::Mat( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_32FC1) );
+        cv::Mat * colorMat          = new cv::Mat( cv::Mat::zeros(color_height, color_width, CV_8UC4) );
+        cv::Mat * rgbdMat           = new cv::Mat( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_8UC4) );
+
+        cv::Mat * rangedDepthMat    = new cv::Mat( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_32FC1) );
+        cv::Mat * rangedRGBDMat     = new cv::Mat( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_8UC4) );
+        cv::Mat * mask              = new cv::Mat( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_THRESH_BINARY) );
+        cv::Mat * histMat           = new cv::Mat( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_8UC3) );
+
+        pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
+    };
+
     static Camera * create_camera(libfreenect2::Freenect2 * _freenect, int id);
 
     int                     getId();
@@ -57,22 +72,13 @@ public:
     virtual cv::Mat         getRangedDepth()  = 0;
     virtual cv::Mat         getHistogram()    = 0;
 
+    virtual camera_frames   getFrames()     = 0;
+
+    void rangeFrames(cv::Mat * rangedRGBD, cv::Mat * rgbd, cv::Mat *tmpMask);
+    void morphFrames(cv::Mat * tmpDepthMat, cv::Mat * tmpRGBDMat, cv::Mat * tmpMask);
+    void faceDetection(cv::Mat * rangedRGBD, cv::Mat * rgbd);
+
     virtual pcl::PointCloud<pcl::PointXYZRGB>::Ptr getCloudData()   = 0;
-
-    struct camera_frames
-    {
-        cv::Mat * depthMat          = new cv::Mat( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_32FC1) );
-        cv::Mat * irMat             = new cv::Mat( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_32FC1) );
-        cv::Mat * colorMat          = new cv::Mat( cv::Mat::zeros(color_height, color_width, CV_8UC4) );
-        cv::Mat * rgbdMat           = new cv::Mat( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_8UC4) );
-
-        cv::Mat * rangedDepthMat    = new cv::Mat( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_32FC1) );
-        cv::Mat * rangedRGBDMat     = new cv::Mat( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_8UC4) );
-        cv::Mat * mask              = new cv::Mat( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_THRESH_BINARY) );
-        cv::Mat * histMat           = new cv::Mat( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_8UC3) );
-
-        pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
-    };
 
     Eigen::Matrix4d transformation_matrix;
     boost::property_tree::ptree pt;

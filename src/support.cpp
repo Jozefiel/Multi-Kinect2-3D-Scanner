@@ -100,7 +100,6 @@ void support::closeThreads()
 
 //CLOUD
 
-
 std::vector<Camera *> support::getConnectedCams()
 {
     return connected_cams;
@@ -217,6 +216,12 @@ void support::viewerUpdater(std::atomic<bool> &snap_running)
     cv::Mat tmpDepth;
     cv::Mat tmpHist;
     cv::Mat tmpRGBD;
+
+    std::vector<Camera::camera_frames> frames0,frames1,frames2;
+    auto i=0;
+
+
+
     while(snap_running)
     {
         for(auto connected_cams_number=0;connected_cams_number<connected_cams.size();connected_cams_number++)
@@ -249,8 +254,22 @@ void support::viewerUpdater(std::atomic<bool> &snap_running)
                 tmpHist.convertTo(tmpHist, CV_8UC3);
                 emit newHist(QPixmap::fromImage(QImage(tmpHist.data,tmpHist.cols,tmpHist.rows,tmpHist.step,QImage::Format_RGB888)),connected_cams_number);
             }
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+
+         //   std::this_thread::sleep_for(std::chrono::milliseconds(10));
        }
+    }
+}
+
+void support::saveSequence()
+{
+    std::vector<Camera::camera_frames> frames;
+
+    for(auto i=0; i<8;i++)
+    {
+        frames.push_back(connected_cams[0]->getFrames());
+
+        std::cout<<i;
     }
 }
 
@@ -268,7 +287,6 @@ void support::pclUpdater(std::atomic<bool> &snap_running)
 
     }
 }
-
 
 //support
 

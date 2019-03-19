@@ -52,6 +52,7 @@ public:
     std::atomic<bool> snap_running {true};
     pcl::PointCloud<pcl::PointXYZRGB> cloudik;
     pclCloud * merged_cloud;
+    void saveSequence();
 
 private:
 
@@ -61,8 +62,6 @@ private:
     std::vector<std::thread>    cam_threads;                                           // vector of threads for image snapping
     std::vector<std::thread>    cloud_threads;
     std::vector<std::thread>    viewer_threads;
-
-
 
     std::atomic<bool> compute_cloud_style {false};
     std::vector<pcl::PointCloud<pcl::PointXYZRGB>> merged_clouds;

@@ -65,6 +65,8 @@ void Kinect::registration()
 void Kinect::frames(std::atomic<bool> & keep_running)
 {
     std::chrono::system_clock::time_point then, now;
+    std::ofstream myfile;
+    auto frame_counter=0;
     while(keep_running)
     {
 //        then=std::chrono::system_clock::now();
@@ -87,6 +89,18 @@ void Kinect::frames(std::atomic<bool> & keep_running)
 //              now=std::chrono::system_clock::now();
 //              std::cout << "FRAME: "<<this->getId()<<" "<< std::chrono::duration_cast<std::chrono::milliseconds>(now - then).count() << " ms" << std::endl;
 
+//                frame_counter++;
+//                cv::imwrite ("test/" + serial + "/" + std::to_string(frame_counter) + "_rgbd.png",*this->new_cam_frames.rgbdMat);
+//                cv::imwrite ("test/" + serial + "/" + std::to_string(frame_counter) + "_ir.exr",*this->new_cam_frames.irMat);
+//                cv::imwrite ("test/" + serial + "/" + std::to_string(frame_counter) + "_depth.hdr",*this->new_cam_frames.depthMat);
+
+//                myfile.open ("test/" + serial + "/" + std::to_string(frame_counter) + "_depth.txt");
+//                for(auto i=0;i<new_libfreenect_frames.undistortedDepth->height*new_libfreenect_frames.undistortedDepth->width;i++)
+//                {
+//                    myfile << std::to_string(new_libfreenect_frames.undistortedDepth->data[i]) + "\n";
+//                }
+//                myfile.close();
+
                 pListener->release(frame);
                 frame_mutex.unlock();
             }
@@ -103,10 +117,11 @@ void Kinect::cloneFrames()
     std::unique_lock<std::timed_mutex> frame_lock(frame_mutex,std::try_to_lock);
     if(!frame_lock)
     {
-
+        if(frame_mutex.try_lock_for(std::chrono::milliseconds(frame_mutex_lock_time)))
+        {
         memcpy(&new_cam_frames,&cam_frames,sizeof (cam_frames));
-//        memcpy(&new_libfreenect_frames,&libfreenect_frames,sizeof (libfreenect_frames));
-
+        frame_mutex.unlock();
+        }
     }
 }
 
@@ -198,6 +213,8 @@ void Kinect::computeHist()
         line( histImage, cv::Point( bin_w*(i-1), hist_h - cvRound(b_hist.at<float>(i-1)) ) ,cv::Point( bin_w*(i), hist_h - cvRound(b_hist.at<float>(i)) ),cv::Scalar( 255, 0, 0), 2, 8, 0  );
     }
     histImage.copyTo(*cam_frames.histMat);
+    histRange=nullptr;
+    delete histRange;
 }
 
 void Kinect::cloudData(std::atomic<bool> & keep_running, std::atomic<bool> & compute_cloud_style )
