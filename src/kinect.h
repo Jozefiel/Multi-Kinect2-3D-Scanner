@@ -73,7 +73,7 @@ public:
 
 
     void cloudInit(size_t size);                                // prepare cloud for copying
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr getCloudData() { return new_cam_frames.cloud; }
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr getCloudData() { return cam_frames.cloud; }
 
 
     void loadCamParams();
@@ -117,7 +117,5 @@ private:
     camera_frames cam_frames;
     libfnct_frames new_libfreenect_frames;
     libfnct_frames libfreenect_frames;
-
-
 };
 #endif // KINECT_H

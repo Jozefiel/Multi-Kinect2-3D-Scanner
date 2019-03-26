@@ -19,7 +19,7 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
 #find requirements
-find_package(PCL 1.8 REQUIRED )
+find_package(PCL 1.9 REQUIRED )
 find_package(OpenCV REQUIRED )
 find_package(freenect2 REQUIRED )
 find_package(VTK 9 REQUIRED )

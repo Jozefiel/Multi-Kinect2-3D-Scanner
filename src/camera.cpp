@@ -29,5 +29,5 @@ void Camera::morphFrames(cv::Mat * tmpDepthMat, cv::Mat * tmpRGBDMat, cv::Mat * 
 
 void Camera::faceDetection(cv::Mat * rangedRGBD, cv::Mat * rgbd)
 {
-    
+
 }

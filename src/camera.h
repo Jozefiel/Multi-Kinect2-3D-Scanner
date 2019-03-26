@@ -1,8 +1,8 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
-
 #include <opencv2/opencv.hpp>
+#include <opencv2/cudaimgproc.hpp>
 #include <libfreenect2/libfreenect2.hpp>
 
 #include <boost/property_tree/ptree.hpp>

@@ -3,7 +3,6 @@
 
 #include <exception>
 
-
 Kinect::Kinect(libfreenect2::Freenect2 * _freenect,int _id)
 {
     try
@@ -78,7 +77,14 @@ void Kinect::frames(std::atomic<bool> & keep_running)
                 libfreenect2::Frame *ir=frame[libfreenect2::Frame::Ir];
                 libfreenect2::Frame *rgb=frame[libfreenect2::Frame::Color];
 
+                cv::Mat interoplateDepth;
+                cv::Mat(depth->height,  depth->width, CV_32FC1, depth->data).copyTo(interoplateDepth);
+
+
                 this->pRegistrated->undistortDepth(depth,new_libfreenect_frames.undistortedDepth);
+                cv::resize(interoplateDepth,interoplateDepth,cv::Size(depth->width,depth->height),0,0,cv::INTER_LINEAR);
+                depth->data = interoplateDepth.data;
+
                 this->pRegistrated->apply(rgb,depth, new_libfreenect_frames.undistortedDepth, new_libfreenect_frames.registered,true, new_libfreenect_frames.depth2rgb);
 
                 cv::Mat(ir->height, ir->width, CV_32FC1, ir->data).copyTo(*this->new_cam_frames.irMat);
@@ -191,30 +197,9 @@ void Kinect::loadCamParams()
 
 void Kinect::cloudInit(size_t size)
 {
-    new_cam_frames.cloud->clear();
-    new_cam_frames.cloud->is_dense = false;
-    new_cam_frames.cloud->points.resize(size);
-}
-
-void Kinect::computeHist()
-{
-    int histSize = maximal_depth-minimal_depth;
-    float range[] = { minimal_depth, maximal_depth }; //the upper boundary is exclusive
-    const float* histRange = { range };
-    bool uniform = true, accumulate = false;
-    cv::Mat b_hist;
-    cv::calcHist( cam_frames.rangedDepthMat, 1, nullptr, cv::Mat(), b_hist, 1, &histSize, &histRange, uniform, accumulate );
-    int hist_w = 512; int hist_h = 424;
-    int bin_w = cvRound( (double) hist_w/histSize );
-    cv::Mat histImage( hist_h, hist_w, CV_8UC3, cv::Scalar( 0,0,0) );
-    cv::normalize(b_hist, b_hist, 0, histImage.rows, cv::NORM_MINMAX, -1, cv::Mat() );
-    for( int i = 1; i < histSize; i++ )
-    {
-        line( histImage, cv::Point( bin_w*(i-1), hist_h - cvRound(b_hist.at<float>(i-1)) ) ,cv::Point( bin_w*(i), hist_h - cvRound(b_hist.at<float>(i)) ),cv::Scalar( 255, 0, 0), 2, 8, 0  );
-    }
-    histImage.copyTo(*cam_frames.histMat);
-    histRange=nullptr;
-    delete histRange;
+    cam_frames.cloud->clear();
+    cam_frames.cloud->is_dense = false;
+    cam_frames.cloud->points.resize(size);
 }
 
 void Kinect::cloudData(std::atomic<bool> & keep_running, std::atomic<bool> & compute_cloud_style )
@@ -234,6 +219,7 @@ void Kinect::cloudData(std::atomic<bool> & keep_running, std::atomic<bool> & com
         cloneFrames();
         computeHist();
         filterFrames();
+
         if(compute_cloud_style==false)
             this->registered2cloud(tmpCloud);
         else
@@ -246,7 +232,7 @@ void Kinect::cloudData(std::atomic<bool> & keep_running, std::atomic<bool> & com
             if(cloud_mutex.try_lock_for(std::chrono::milliseconds(mutex_lock_time)))
             {
                 cloudInit(tmpCloud->points.size());
-                pcl::copyPointCloud(*tmpCloud,*new_cam_frames.cloud);
+                pcl::copyPointCloud(*tmpCloud,*cam_frames.cloud);
                 cloud_mutex.unlock();
             }
         }
@@ -334,7 +320,7 @@ void Kinect::depth2cloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &tmpCloud)
     {
         for (int x_side = 0; x_side < ir_depth_height; x_side++)
         {
-            double Z = this->new_cam_frames.rangedDepthMat->at<float>(x_side, y_side) / 1;
+            double Z = this->cam_frames.rangedDepthMat->at<float>(x_side, y_side) / 1;
             if(Z>0)
             {
                 Z= scale /(Z * -0.0030711016 + 3.3309495161);
@@ -354,9 +340,9 @@ void Kinect::depth2cloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &tmpCloud)
             tmpCloud->points[n].x=x;
             tmpCloud->points[n].y=y;
             tmpCloud->points[n].z=z;
-            tmpCloud->points[n].r=this->new_cam_frames.rangedRGBDMat->at<cv::Vec3b>(x_side,y_side)[2];
-            tmpCloud->points[n].g=this->new_cam_frames.rangedRGBDMat->at<cv::Vec3b>(x_side,y_side)[1];
-            tmpCloud->points[n].b=this->new_cam_frames.rangedRGBDMat->at<cv::Vec3b>(x_side,y_side)[0];
+            tmpCloud->points[n].r=this->cam_frames.rangedRGBDMat->at<cv::Vec3b>(x_side,y_side)[2];
+            tmpCloud->points[n].g=this->cam_frames.rangedRGBDMat->at<cv::Vec3b>(x_side,y_side)[1];
+            tmpCloud->points[n].b=this->cam_frames.rangedRGBDMat->at<cv::Vec3b>(x_side,y_side)[0];
             n++;
         }
     }

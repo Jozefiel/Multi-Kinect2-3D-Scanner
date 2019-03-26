@@ -5,6 +5,8 @@
 #include "kinect.h"
 #include "pcl.h"
 
+#include <queue>
+
 #include <QObject>
 #include <QImage>
 #include <QPixmap>
@@ -31,6 +33,9 @@ public:
     void threadFrameUpdater();
     void closeThreads();
 
+    void camera2framesDataTransfer();
+
+
     void cloudInit();
     void camera2cloudDataTransfer();
     void transformCloud();
@@ -45,7 +50,7 @@ public:
 
     void viewerUpdater(std::atomic<bool> & snap_running);
     void pclUpdater(std::atomic<bool> &snap_running);
-
+    void frameUpdater(std::atomic<bool> &snap_running);
     std::string IntToStr(int n);
     void changeComputeStyle(int);
     void saveLUT(cv::Mat depth, cv::Mat rgbd, std::string filename, int counter);
@@ -58,10 +63,11 @@ private:
 
     std::vector<Camera*>        connected_cams;                                            // vector of Camera objects
     std::vector<pclCloud>       clouds;
-
     std::vector<std::thread>    cam_threads;                                           // vector of threads for image snapping
     std::vector<std::thread>    cloud_threads;
     std::vector<std::thread>    viewer_threads;
+
+    std::vector<std::queue<Camera::camera_frames>> * cam_frames=nullptr;
 
     std::atomic<bool> compute_cloud_style {false};
     std::vector<pcl::PointCloud<pcl::PointXYZRGB>> merged_clouds;
