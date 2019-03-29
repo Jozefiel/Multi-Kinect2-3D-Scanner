@@ -35,7 +35,7 @@
 #define minimal_depth 350
 #define maximal_depth 800
 #define mutex_lock_time 15
-#define frame_mutex_lock_time 5
+#define frame_mutex_lock_time 10
 
 class Kinect : public Camera
 {
@@ -50,14 +50,14 @@ public:
 
     void        cloneFrames();
 
-    cv::Mat     getRGB()         { return *cam_frames.colorMat; }                                    // return opencv mat
-    cv::Mat     getDepth()       { return *cam_frames.depthMat; }
-    cv::Mat     getIR()          { return *cam_frames.irMat; }
-    cv::Mat     getRGBD()        { return *cam_frames.rgbdMat; }
-    cv::Mat     getMask()        { return *cam_frames.mask; }
-    cv::Mat     getRangedDepth() { return *cam_frames.rangedDepthMat; }
-    cv::Mat     getRangedRGBD()  { return *cam_frames.rangedRGBDMat; }
-    cv::Mat     getHistogram()   { return *cam_frames.histMat; }
+    cv::Mat     getRGB()         { return cam_frames.colorMat; }                                    // return opencv mat
+    cv::Mat     getDepth()       { return cam_frames.depthMat; }
+    cv::Mat     getIR()          { return cam_frames.irMat; }
+    cv::Mat     getRGBD()        { return cam_frames.rgbdMat; }
+    cv::Mat     getMask()        { return cam_frames.mask; }
+    cv::Mat     getRangedDepth() { return cam_frames.rangedDepthMat; }
+    cv::Mat     getRangedRGBD()  { return cam_frames.rangedRGBDMat; }
+    cv::Mat     getHistogram()   { return cam_frames.histMat; }
 
     camera_frames   getFrames()  { return cam_frames; }
 
@@ -73,7 +73,7 @@ public:
 
 
     void cloudInit(size_t size);                                // prepare cloud for copying
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr getCloudData() { return cam_frames.cloud; }
+    pcl::PointCloud<pcl::PointXYZRGB> getCloudData() { return cam_frames.cloud; }
 
 
     void loadCamParams();

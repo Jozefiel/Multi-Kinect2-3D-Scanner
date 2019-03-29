@@ -9,18 +9,18 @@ void support::camera2framesDataTransfer()
 {
     for(auto id=0;id<this->connectedCameras();id++)
     {
-//        if(connected_cams[id]->lockCloud(mutexTimeDelay))
-//        {
-            cam_frames[0][id].push(connected_cams[id]->getFrames());
+ //       Camera::camera_frames tmp_cam_frames;
+//        memcpy(&connected_cams[id]->getFrames(),tmp_cam_frames,sizeof(tmp_cam_frames));
+        cam_frames[0][id].emplace(connected_cams[id]->getFrames());
 //        } else
  //           std::cout<<"support::camera2framesDataTransfer error: cloud was not transfered"<<std::endl;
 //        if( cam_frames[0][id].size()>7)
 //                cam_frames[0][id].pop();
     }
-    std::cout<<cam_frames->at(0).size()<<std::endl;
-    cv::imshow("testik0",*cam_frames->at(0).front().depthMat);
-    cv::imshow("testik1",*cam_frames->at(0).back().depthMat);
-    cv::imshow("testik2",*cam_frames->at(2).back().depthMat);
+//    std::cout<<cam_frames->at(0).size()<<std::endl;
+    cv::imshow("testik0",cam_frames->at(0).front().depthMat);
+    cv::imshow("testik1",cam_frames->at(0).back().depthMat);
+    cv::imshow("testik2",cam_frames->at(2).back().depthMat);
 }
 
 void support::saveSequence()

@@ -30,22 +30,22 @@ public:
 
     ~pclCloud();
 
-    void pclAddCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud, int);
-    void pclCopyCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr kinect_cloud);
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr getCloud() { return cloud; }
+    void pclAddCloud(pcl::PointCloud<pcl::PointXYZRGB> cloud, int);
+    void pclCopyCloud(pcl::PointCloud<pcl::PointXYZRGB> kinect_cloud);
+    pcl::PointCloud<pcl::PointXYZRGB> getCloud() { return cloud; }
 
 
     void setTransformationMatrix(Eigen::Matrix4d transform);
     Eigen::Matrix4d getTransformationMatrix();
     void transformPointCloud();
     void transformPointCloud(Eigen::Matrix4d transform);
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr getTransformedCloud() { return transformed_cloud; }
+    pcl::PointCloud<pcl::PointXYZRGB> getTransformedCloud() { return transformed_cloud; }
     void removeOutliers(int meanK, double mulTresh);
-    void mergeClouds(std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> clouds);
+    void mergeClouds(std::vector<pcl::PointCloud<pcl::PointXYZRGB>> clouds);
 
 
     void computeNormals();
-    pcl::PointCloud<pcl::Normal>::Ptr getCloudNormals() { return normals_cloud; }
+    pcl::PointCloud<pcl::Normal> getCloudNormals() { return normals_cloud; }
 
     void creteMesh(int kSearch);
 
@@ -55,9 +55,9 @@ private:
     std::string serial = "";
 
     Eigen::Matrix4d transform_matrix;
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr transformed_cloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
-    pcl::PointCloud<pcl::Normal>::Ptr normals_cloud = pcl::PointCloud<pcl::Normal>::Ptr(new pcl::PointCloud<pcl::Normal>);
+    pcl::PointCloud<pcl::PointXYZRGB> cloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
+    pcl::PointCloud<pcl::PointXYZRGB> transformed_cloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
+    pcl::PointCloud<pcl::Normal> normals_cloud = pcl::PointCloud<pcl::Normal>::Ptr(new pcl::PointCloud<pcl::Normal>);
 
     boost::property_tree::ptree pt;
 

@@ -28,21 +28,34 @@ public:
 
     struct camera_frames
     {
-        cv::Mat * depthMat          = new cv::Mat( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_32FC1) );
-        cv::Mat * irMat             = new cv::Mat( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_32FC1) );
-        cv::Mat * colorMat          = new cv::Mat( cv::Mat::zeros(color_height, color_width, CV_8UC4) );
-        cv::Mat * rgbdMat           = new cv::Mat( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_8UC4) );
+//        std::shared_ptr<cv::Mat> depthMat = std::make_shared<cv::Mat>(cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_32FC1)) ;
+//        std::shared_ptr<cv::Mat> irMat    = std::make_shared<cv::Mat>( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_32FC1) );
+//        std::shared_ptr<cv::Mat> colorMat = std::make_shared<cv::Mat>( cv::Mat::zeros(color_height, color_width, CV_8UC4) );
+//        std::shared_ptr<cv::Mat> rgbdMat  = std::make_shared<cv::Mat>( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_8UC4) );
 
-        cv::Mat * rangedDepthMat    = new cv::Mat( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_32FC1) );
-        cv::Mat * rangedRGBDMat     = new cv::Mat( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_8UC4) );
-        cv::Mat * mask              = new cv::Mat( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_THRESH_BINARY) );
-        cv::Mat * histMat           = new cv::Mat( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_8UC3) );
+//        std::shared_ptr<cv::Mat> rangedDepthMat  = std::make_shared<cv::Mat>( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_32FC1) );
+//        std::shared_ptr<cv::Mat> rangedRGBDMat   = std::make_shared<cv::Mat>( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_8UC4) );
+//        std::shared_ptr<cv::Mat> mask            = std::make_shared<cv::Mat>( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_THRESH_BINARY) );
+//        std::shared_ptr<cv::Mat> histMat         = std::make_shared<cv::Mat>( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_8UC3) );
 
-        pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
+//        pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
+
+
+        cv::Mat depthMat     = cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_32FC1);
+        cv::Mat irMat       = cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_32FC1);
+        cv::Mat colorMat    = cv::Mat::zeros(color_height, color_width, CV_8UC4);
+        cv::Mat rgbdMat     = cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_8UC4);
+
+        cv::Mat rangedDepthMat  =  cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_32FC1);
+        cv::Mat rangedRGBDMat   =  cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_8UC4);
+        cv::Mat mask            =  cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_THRESH_BINARY);
+        cv::Mat histMat         =  cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_8UC3);
+
+        pcl::PointCloud<pcl::PointXYZRGB> cloud; //= pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
     };
 
     static Camera * create_camera(libfreenect2::Freenect2 * _freenect, int id);
-
+    virtual ~Camera();
     int                     getId();
     std::string             getSerial();
     std::string             getCamType();
@@ -74,11 +87,11 @@ public:
 
     virtual camera_frames   getFrames()     = 0;
 
-    void rangeFrames(cv::Mat * rangedRGBD, cv::Mat * rgbd, cv::Mat *tmpMask);
-    void morphFrames(cv::Mat * tmpDepthMat, cv::Mat * tmpRGBDMat, cv::Mat * tmpMask);
-    void faceDetection(cv::Mat * rangedRGBD, cv::Mat * rgbd);
+    void rangeFrames(cv::Mat rangedRGBD, cv::Mat rgbd, cv::Mat tmpMask);
+    void morphFrames(cv::Mat  tmpDepthMat, cv::Mat  tmpRGBDMat, cv::Mat  tmpMask);
+    void faceDetection(cv::Mat  rangedRGBD, cv::Mat  rgbd);
 
-    virtual pcl::PointCloud<pcl::PointXYZRGB>::Ptr getCloudData()   = 0;
+    virtual pcl::PointCloud<pcl::PointXYZRGB> getCloudData()   = 0;
 
     Eigen::Matrix4d transformation_matrix;
     boost::property_tree::ptree pt;

@@ -11,23 +11,28 @@ std::string  Camera::getSerial() { return serial; }
 std::string  Camera::getCamType()  { return camera_type;}
 
 
-void Camera::rangeFrames(cv::Mat * tmpDepthMat, cv::Mat * tmpRGBDMat, cv::Mat * tmpMask)
+void Camera::rangeFrames(cv::Mat  tmpDepthMat, cv::Mat  tmpRGBDMat, cv::Mat  tmpMask)
 {
-    tmpRGBDMat->convertTo(*tmpRGBDMat,CV_8UC3);
-    cv::cvtColor(*tmpRGBDMat,*tmpRGBDMat,CV_RGBA2RGB);
-    cv::inRange(*tmpDepthMat,80,800,*tmpMask);
+    tmpRGBDMat.convertTo(tmpRGBDMat,CV_8UC3);
+    cv::cvtColor(tmpRGBDMat,tmpRGBDMat,CV_RGBA2RGB);
+    cv::inRange(tmpDepthMat,80,800,tmpMask);
 }
 
-void Camera::morphFrames(cv::Mat * tmpDepthMat, cv::Mat * tmpRGBDMat, cv::Mat * tmpMask)
+void Camera::morphFrames(cv::Mat tmpDepthMat, cv::Mat tmpRGBDMat, cv::Mat tmpMask)
 {
     cv::Mat element = getStructuringElement( cv::MORPH_RECT,cv::Size( 4*1 + 1, 4*1+1 ),cv::Point( 4, 4 ) );
-    cv::erode( *tmpMask, *tmpMask, element );
+    cv::erode( tmpMask, tmpMask, element );
 
     cv::Mat tmpBilateralDepthMat;
-    cv::bilateralFilter( *tmpDepthMat, tmpBilateralDepthMat, 7, 15, 15 );
+    cv::bilateralFilter( tmpDepthMat, tmpBilateralDepthMat, 7, 15, 15 );
 }
 
-void Camera::faceDetection(cv::Mat * rangedRGBD, cv::Mat * rgbd)
+void Camera::faceDetection(cv::Mat  rangedRGBD, cv::Mat rgbd)
+{
+
+}
+
+Camera::~Camera()
 {
 
 }
