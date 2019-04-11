@@ -55,9 +55,9 @@ private:
     std::string serial = "";
 
     Eigen::Matrix4d transform_matrix;
-    pcl::PointCloud<pcl::PointXYZRGB> cloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
-    pcl::PointCloud<pcl::PointXYZRGB> transformed_cloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
-    pcl::PointCloud<pcl::Normal> normals_cloud = pcl::PointCloud<pcl::Normal>::Ptr(new pcl::PointCloud<pcl::Normal>);
+    pcl::PointCloud<pcl::PointXYZRGB> cloud ;//= pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
+    pcl::PointCloud<pcl::PointXYZRGB> transformed_cloud ;//= pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
+    pcl::PointCloud<pcl::Normal> normals_cloud ;//= pcl::PointCloud<pcl::Normal>::Ptr(new pcl::PointCloud<pcl::Normal>);
 
     boost::property_tree::ptree pt;
 

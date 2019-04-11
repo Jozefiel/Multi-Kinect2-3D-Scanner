@@ -50,12 +50,12 @@ void support::transformCloud(std::vector<Eigen::Matrix4d> transform_matrix)
     std::cout<<"support::transformCloud"<<std::endl;
 }
 
-pcl::PointCloud<pcl::PointXYZRGB>::Ptr support::getCloudData(int id)
+pcl::PointCloud<pcl::PointXYZRGB> support::getCloudData(int id)
 {
     return clouds[id].getCloud();
 }
 
-pcl::PointCloud<pcl::PointXYZRGB>::Ptr support::getTransformedCloudData(int id)
+pcl::PointCloud<pcl::PointXYZRGB> support::getTransformedCloudData(int id)
 {
     return clouds[id].getTransformedCloud();
 }
@@ -63,7 +63,7 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr support::getTransformedCloudData(int id)
 std::vector<pcl::PointCloud<pcl::PointXYZRGB>> support::mergeClouds(bool transformed)
 {
 //    merged_clouds.clear();
-    std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> temp_clouds;
+    std::vector<pcl::PointCloud<pcl::PointXYZRGB>> temp_clouds;
 
     if(transformed)
     {
@@ -87,7 +87,7 @@ std::vector<pcl::PointCloud<pcl::PointXYZRGB>> support::mergeClouds(bool transfo
 std::vector<pcl::PointCloud<pcl::PointXYZRGB> > support::mergeClouds(bool transformed, std::vector<Eigen::Matrix4d> transform_matrix)
 {
 //    merged_clouds.clear();
-    std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> temp_clouds;
+    std::vector<pcl::PointCloud<pcl::PointXYZRGB>> temp_clouds;
 
     if(transformed)
     {

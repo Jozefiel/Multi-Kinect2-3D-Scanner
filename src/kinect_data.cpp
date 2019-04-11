@@ -100,7 +100,7 @@ void Kinect::cloudData(std::atomic<bool> & keep_running, std::atomic<bool> & com
             if(cloud_mutex.try_lock_for(std::chrono::milliseconds(mutex_lock_time)))
             {
                 cloudInit(tmpCloud->points.size());
-                pcl::copyPointCloud(*tmpCloud,*cam_frames.cloud);
+                pcl::copyPointCloud(*tmpCloud,cam_frames.cloud);
                 cloud_mutex.unlock();
             }
         }
@@ -112,9 +112,9 @@ void Kinect::cloudData(std::atomic<bool> & keep_running, std::atomic<bool> & com
 
 void Kinect::cloudInit(size_t size)
 {
-    cam_frames.cloud->clear();
-    cam_frames.cloud->is_dense = false;
-    cam_frames.cloud->points.resize(size);
+    cam_frames.cloud.clear();
+    cam_frames.cloud.is_dense = false;
+    cam_frames.cloud.points.resize(size);
 }
 
 void Kinect::registered2cloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &tmpCloud)

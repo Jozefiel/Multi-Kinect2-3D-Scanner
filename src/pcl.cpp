@@ -54,12 +54,12 @@ pclCloud::pclCloud(int cam_id)
     id=cam_id;
 }
 
-void pclCloud::pclCopyCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cam_cloud)
+void pclCloud::pclCopyCloud(pcl::PointCloud<pcl::PointXYZRGB> cam_cloud)
 {
-    if(!cam_cloud->empty())
+    if(!cam_cloud.empty())
     {
-        cloud->clear();
-        pcl::copyPointCloud(*cam_cloud,*cloud);
+        cloud.clear();
+        pcl::copyPointCloud(cam_cloud,cloud);
     }
     else
     {
@@ -94,9 +94,9 @@ Eigen::Matrix4d pclCloud::getTransformationMatrix()
 
 void pclCloud::transformPointCloud()
 {
-    if(!cloud->empty())
+    if(!cloud.empty())
     {
-        pcl::transformPointCloud(*cloud,*transformed_cloud,transform_matrix,true);
+        pcl::transformPointCloud(cloud,transformed_cloud,transform_matrix,true);
     }
     else
     {
@@ -106,9 +106,9 @@ void pclCloud::transformPointCloud()
 
 void pclCloud::transformPointCloud(Eigen::Matrix4d transform)
 {
-    if(!cloud->empty())
+    if(!cloud.empty())
     {
-        pcl::transformPointCloud(*cloud,*transformed_cloud,transform,true);
+        pcl::transformPointCloud(cloud,transformed_cloud,transform,true);
     }
     else
     {
@@ -118,37 +118,37 @@ void pclCloud::transformPointCloud(Eigen::Matrix4d transform)
 
 void pclCloud::removeOutliers(int meanK, double mulTresh)
 {
-    pcl::StatisticalOutlierRemoval<pcl::PointXYZRGB> sor;
-    sor.setInputCloud(cloud);
-    sor.setMeanK(meanK);
-    sor.setStddevMulThresh(mulTresh);
-    sor.filter(*cloud);
+//    pcl::StatisticalOutlierRemoval<pcl::PointXYZRGB> sor;
+//    sor.setInputCloud(cloud);
+//    sor.setMeanK(meanK);
+//    sor.setStddevMulThresh(mulTresh);
+//    sor.filter(*cloud);
 }
 
 void pclCloud::computeNormals()
 {
-    pcl::NormalEstimation<pcl::PointXYZRGB, pcl::Normal> ne;
-    ne.setInputCloud(cloud);
-    pcl::search::KdTree<pcl::PointXYZRGB>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZRGB> ());
-    ne.setSearchMethod (tree);
-    ne.setRadiusSearch (0.03);
-    ne.compute (*normals_cloud);
+//    pcl::NormalEstimation<pcl::PointXYZRGB, pcl::Normal> ne;
+//    ne.setInputCloud(cloud);
+//    pcl::search::KdTree<pcl::PointXYZRGB>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZRGB> ());
+//    ne.setSearchMethod (tree);
+//    ne.setRadiusSearch (0.03);
+//    ne.compute (*normals_cloud);
 }
 
-void pclCloud::mergeClouds(std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> clouds)
+void pclCloud::mergeClouds(std::vector<pcl::PointCloud<pcl::PointXYZRGB>> clouds)
 {
-    cloud->clear();
+    cloud.clear();
     for(auto i=0;i<clouds.size();i++)
     {
-        if(!clouds[i]->empty())
-            *cloud+=*clouds[i];
+        if(!clouds[i].empty())
+            cloud+=clouds[i];
     }
 }
 
 void pclCloud::creteMesh(int kSearch)
 {
       pcl::PointCloud<pcl::PointXYZ>::Ptr tmp_cloud (new pcl::PointCloud<pcl::PointXYZ>);
-      copyPointCloud(*cloud, *tmp_cloud);
+      copyPointCloud(cloud, *tmp_cloud);
 
       pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> normal_estimation;
       normal_estimation.setInputCloud(tmp_cloud);

@@ -9,18 +9,19 @@ void support::camera2framesDataTransfer()
 {
     for(auto id=0;id<this->connectedCameras();id++)
     {
- //       Camera::camera_frames tmp_cam_frames;
-//        memcpy(&connected_cams[id]->getFrames(),tmp_cam_frames,sizeof(tmp_cam_frames));
+//        Camera::camera_frames tmp_cam_frames;
+//        memcpy(static_cast<void*>(&connected_cams[id]->getFrames()),static_cast<void*>(&tmp_cam_frames),sizeof(tmp_cam_frames));
+
         cam_frames[0][id].emplace(connected_cams[id]->getFrames());
 //        } else
  //           std::cout<<"support::camera2framesDataTransfer error: cloud was not transfered"<<std::endl;
-//        if( cam_frames[0][id].size()>7)
-//                cam_frames[0][id].pop();
+        if( cam_frames[0][id].size()>7)
+                cam_frames[0][id].pop();
     }
 //    std::cout<<cam_frames->at(0).size()<<std::endl;
+
     cv::imshow("testik0",cam_frames->at(0).front().depthMat);
     cv::imshow("testik1",cam_frames->at(0).back().depthMat);
-    cv::imshow("testik2",cam_frames->at(2).back().depthMat);
 }
 
 void support::saveSequence()

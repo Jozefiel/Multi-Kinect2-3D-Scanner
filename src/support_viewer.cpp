@@ -60,7 +60,7 @@ void support::pclUpdater(std::atomic<bool> &snap_running)
         this->camera2cloudDataTransfer();   // store cloud to pcl objects
         merged_cloud->mergeClouds(this->mergeClouds(false));//! error when true, random fallings
 
-        if(!merged_cloud->getCloud()->empty())
+        if(!merged_cloud->getCloud().empty())
             emit newCloud();
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
