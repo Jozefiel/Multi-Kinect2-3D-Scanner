@@ -9,19 +9,25 @@ void support::camera2framesDataTransfer()
 {
     for(auto id=0;id<this->connectedCameras();id++)
     {
-//        Camera::camera_frames tmp_cam_frames;
-//        memcpy(static_cast<void*>(&connected_cams[id]->getFrames()),static_cast<void*>(&tmp_cam_frames),sizeof(tmp_cam_frames));
+        Camera::camera_frames tmp_cam_frames;
+        tmp_cam_frames.depthMat= connected_cams[id]->getFrames().depthMat.clone();
 
-        cam_frames[0][id].emplace(connected_cams[id]->getFrames());
+
+//        memcpy(static_cast<void*>(&connected_cams[id]->getFrames()),static_cast<void*>(&tmp_cam_frames),sizeof(tmp_cam_frames));
+        cam_frames[0][id].emplace(tmp_cam_frames);
 //        } else
  //           std::cout<<"support::camera2framesDataTransfer error: cloud was not transfered"<<std::endl;
         if( cam_frames[0][id].size()>7)
                 cam_frames[0][id].pop();
-    }
-//    std::cout<<cam_frames->at(0).size()<<std::endl;
 
-    cv::imshow("testik0",cam_frames->at(0).front().depthMat);
+        counter++;
+    }
+//    std::cout<<"size: " <<counter_frame->at(0).size()<<std::endl;
+//    std::cout<< "back: " << counter_frame->at(0).back()<<std::endl;
+//    std::cout<< "front: " << counter_frame->at(0).front()<<std::endl;
+
     cv::imshow("testik1",cam_frames->at(0).back().depthMat);
+//    std::this_thread::sleep_for(std::chrono::milliseconds(10));
 }
 
 void support::saveSequence()

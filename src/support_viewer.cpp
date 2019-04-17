@@ -16,14 +16,17 @@ void support::viewerUpdater(std::atomic<bool> &snap_running)
     {
         for(auto connected_cams_number=0;connected_cams_number<connected_cams.size();connected_cams_number++)
         {
-            tmpDepth=connected_cams[connected_cams_number]->getDepth()/8;
+            if(cam_frames->at(connected_cams_number).size()>6)
+            {
+
+            tmpDepth=cam_frames->at(connected_cams_number).back().depthMat.clone()/8;
             tmpDepth.convertTo(tmpDepth,CV_8UC1);
 
             tmpIR=connected_cams[connected_cams_number]->getIR()/64;
             tmpIR.convertTo(tmpIR, CV_8UC1);
 
             tmpRGBD=connected_cams[connected_cams_number]->getRGBD();
-            cv::cvtColor(tmpRGBD,tmpRGBD,CV_RGBA2RGB);
+            cv::cvtColor(tmpRGBD,tmpRGBD,CV_RGBA2RGB);          
 
             emit newRGBD(QPixmap::fromImage(QImage(tmpRGBD.data,tmpRGBD.cols,tmpRGBD.rows,tmpRGBD.step,QImage::Format_RGB888).rgbSwapped()),connected_cams_number);
             emit newDepth(QPixmap::fromImage(QImage(tmpDepth.data,tmpDepth.cols,tmpDepth.rows,tmpDepth.step,QImage::Format_Indexed8)),connected_cams_number);
@@ -45,8 +48,13 @@ void support::viewerUpdater(std::atomic<bool> &snap_running)
                 emit newHist(QPixmap::fromImage(QImage(tmpHist.data,tmpHist.cols,tmpHist.rows,tmpHist.step,QImage::Format_RGB888)),connected_cams_number);
             }
 
-
+//            if(!cam_frames->at(0).front().depthMat.empty() && !cam_frames->at(0).back().depthMat.empty())
+//            {
+//                cv::imshow("testik0",cam_frames->at(0).front().depthMat);
+//                cv::imshow("testik1",cam_frames->at(0).back().depthMat);
+//            }
          //   std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            }
        }
     }
 }

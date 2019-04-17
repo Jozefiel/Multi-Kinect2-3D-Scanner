@@ -59,6 +59,10 @@ public:
     pclCloud * merged_cloud;
     void saveSequence();
 
+    int counter=0;
+    std::vector<std::queue<int>> * counter_frame=nullptr;
+
+
 private:
 
     std::vector<Camera*>        connected_cams;                                            // vector of Camera objects

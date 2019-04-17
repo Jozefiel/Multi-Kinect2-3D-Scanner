@@ -7,6 +7,8 @@ void support::cameraInit()
     this->realsenseInit();
 
     cam_frames = new std::vector<std::queue<Camera::camera_frames>>(connected_cams.size());
+    counter_frame = new std::vector<std::queue<int>>(connected_cams.size());
+
 }
 
 void support::kinectInit()
