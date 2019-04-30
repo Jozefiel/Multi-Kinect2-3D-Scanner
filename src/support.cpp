@@ -7,27 +7,24 @@ support::support(QObject *parent) : QObject(parent)
 
 void support::camera2framesDataTransfer()
 {
-    for(auto id=0;id<this->connectedCameras();id++)
+    for(unsigned long id=0;id<static_cast<unsigned long>(this->connectedCameras());id++)
     {
         Camera::camera_frames tmp_cam_frames;
+
         tmp_cam_frames.depthMat= connected_cams[id]->getFrames().depthMat.clone();
+        tmp_cam_frames.rgbdMat= connected_cams[id]->getFrames().rgbdMat.clone();
+        tmp_cam_frames.colorMat= connected_cams[id]->getFrames().colorMat.clone();
+        tmp_cam_frames.irMat= connected_cams[id]->getFrames().irMat.clone();
+        tmp_cam_frames.histMat= connected_cams[id]->getFrames().histMat.clone();
+        tmp_cam_frames.mask= connected_cams[id]->getFrames().mask.clone();
+        tmp_cam_frames.rangedRGBDMat= connected_cams[id]->getFrames().rangedRGBDMat.clone();
+        tmp_cam_frames.rangedDepthMat= connected_cams[id]->getFrames().rangedDepthMat.clone();
+        tmp_cam_frames.cloud = connected_cams[id]->getFrames().cloud;
 
-
-//        memcpy(static_cast<void*>(&connected_cams[id]->getFrames()),static_cast<void*>(&tmp_cam_frames),sizeof(tmp_cam_frames));
         cam_frames[0][id].emplace(tmp_cam_frames);
-//        } else
- //           std::cout<<"support::camera2framesDataTransfer error: cloud was not transfered"<<std::endl;
         if( cam_frames[0][id].size()>7)
                 cam_frames[0][id].pop();
-
-        counter++;
     }
-//    std::cout<<"size: " <<counter_frame->at(0).size()<<std::endl;
-//    std::cout<< "back: " << counter_frame->at(0).back()<<std::endl;
-//    std::cout<< "front: " << counter_frame->at(0).front()<<std::endl;
-
-    cv::imshow("testik1",cam_frames->at(0).back().depthMat);
-//    std::this_thread::sleep_for(std::chrono::milliseconds(10));
 }
 
 void support::saveSequence()

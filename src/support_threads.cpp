@@ -8,7 +8,6 @@ void support::cameraInit()
 
     cam_frames = new std::vector<std::queue<Camera::camera_frames>>(connected_cams.size());
     counter_frame = new std::vector<std::queue<int>>(connected_cams.size());
-
 }
 
 void support::kinectInit()
@@ -21,12 +20,10 @@ void support::kinectInit()
         connected_cams.push_back(Camera::create_camera(pFreenect2, id));
     }
     std::cout<<"support::kinectInit started"<<std::endl;
-
 }
 
 void support::realsenseInit()
 {
-
     std::cout<<"support::realsenseInit started"<<std::endl;
 }
 
@@ -45,7 +42,7 @@ int support::connectedCameras()
 void support::threadsInit()
 {
     this->threadCameraSnapping();
-    this->threadComputePointCloud();
+//    this->threadComputePointCloud();
     this->threadFrameUpdater();
 }
 
@@ -80,10 +77,9 @@ void support::threadComputePointCloud()
 
 void support::threadFrameUpdater()
 {
-    viewer_threads.push_back(std::thread(&support::viewerUpdater,this,std::ref(snap_running)));
-    viewer_threads.push_back(std::thread(&support::pclUpdater,this,std::ref(snap_running)));
+  //  viewer_threads.push_back(std::thread(&support::viewerUpdater,this,std::ref(snap_running)));
+ //  viewer_threads.push_back(std::thread(&support::pclUpdater,this,std::ref(snap_running)));
     viewer_threads.push_back(std::thread(&support::frameUpdater,this,std::ref(snap_running)));
-
 
     for (auto viewer_threads_counter=0; viewer_threads_counter<this->viewer_threads.size(); viewer_threads_counter++)     //detach threads
     {

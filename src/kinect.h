@@ -61,9 +61,11 @@ public:
 
     camera_frames   getFrames()  { return cam_frames; }
 
+
     void        depth2cloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr  &tmpCloud);
     void        registered2cloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &tmpCloud);
 
+    bool        cloudData(bool);
     void        cloudData(std::atomic<bool> & keep_running, std::atomic<bool> &compute_cloud_style); // kinect wrapper to pcl
     void        filterFrames();
     void        computeHist();

@@ -18,7 +18,7 @@ void Camera::rangeFrames(cv::Mat  tmpDepthMat, cv::Mat  tmpRGBDMat, cv::Mat  tmp
     cv::inRange(tmpDepthMat,80,800,tmpMask);
 }
 
-void Camera::morphFrames(cv::Mat tmpDepthMat, cv::Mat tmpRGBDMat, cv::Mat tmpMask)
+void Camera::morphFrames(cv::Mat & tmpDepthMat, cv::Mat &tmpRGBDMat, cv::Mat &tmpMask)
 {
     cv::Mat element = getStructuringElement( cv::MORPH_RECT,cv::Size( 4*1 + 1, 4*1+1 ),cv::Point( 4, 4 ) );
     cv::erode( tmpMask, tmpMask, element );

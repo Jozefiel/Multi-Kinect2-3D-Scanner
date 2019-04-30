@@ -28,19 +28,6 @@ public:
 
     struct camera_frames
     {
-//        std::shared_ptr<cv::Mat> depthMat = std::make_shared<cv::Mat>(cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_32FC1)) ;
-//        std::shared_ptr<cv::Mat> irMat    = std::make_shared<cv::Mat>( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_32FC1) );
-//        std::shared_ptr<cv::Mat> colorMat = std::make_shared<cv::Mat>( cv::Mat::zeros(color_height, color_width, CV_8UC4) );
-//        std::shared_ptr<cv::Mat> rgbdMat  = std::make_shared<cv::Mat>( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_8UC4) );
-
-//        std::shared_ptr<cv::Mat> rangedDepthMat  = std::make_shared<cv::Mat>( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_32FC1) );
-//        std::shared_ptr<cv::Mat> rangedRGBDMat   = std::make_shared<cv::Mat>( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_8UC4) );
-//        std::shared_ptr<cv::Mat> mask            = std::make_shared<cv::Mat>( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_THRESH_BINARY) );
-//        std::shared_ptr<cv::Mat> histMat         = std::make_shared<cv::Mat>( cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_8UC3) );
-
-//        pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
-
-
         cv::Mat depthMat     = cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_32FC1);
         cv::Mat irMat       = cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_32FC1);
         cv::Mat colorMat    = cv::Mat::zeros(color_height, color_width, CV_8UC4);
@@ -88,7 +75,7 @@ public:
     virtual camera_frames   getFrames()     = 0;
 
     void rangeFrames(cv::Mat rangedRGBD, cv::Mat rgbd, cv::Mat tmpMask);
-    void morphFrames(cv::Mat  tmpDepthMat, cv::Mat  tmpRGBDMat, cv::Mat  tmpMask);
+    void morphFrames(cv::Mat  &tmpDepthMat, cv::Mat  &tmpRGBDMat, cv::Mat &tmpMask);
     void faceDetection(cv::Mat  rangedRGBD, cv::Mat  rgbd);
 
     virtual pcl::PointCloud<pcl::PointXYZRGB> getCloudData()   = 0;

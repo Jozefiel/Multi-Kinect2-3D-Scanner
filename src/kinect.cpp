@@ -61,7 +61,6 @@ void Kinect::registration()
     this->pRegistrated = new libfreenect2::Registration(this->pDev->getIrCameraParams(),this->pDev->getColorCameraParams());
 }
 
-
 void Kinect::loadCamParams()
 {
     Eigen::Matrix4d transform_matrix;
@@ -125,7 +124,6 @@ void Kinect::loadCamParams()
     }
    transformation_matrix = transform_matrix;
 }
-
 
 bool Kinect::lockCloud(int lock_time)
 {
