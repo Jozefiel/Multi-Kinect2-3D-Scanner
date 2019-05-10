@@ -19,19 +19,6 @@ std::vector<pclCloud> support::getClouds()
     return clouds;
 }
 
-void support::camera2cloudDataTransfer()
-{
-    for(auto id=0;id<this->connectedCameras();id++)
-    {
-        if(connected_cams[id]->lockCloud(mutexTimeDelay))
-        {
-            clouds[id].pclCopyCloud(connected_cams[id]->getCloudData());
-            connected_cams[id]->unlockCloud();
-        } else
-            std::cout<<"support::camera2cloudDataTransfer error: cloud was not transfered"<<std::endl;
-    }
-}
-
 void support::transformCloud()
 {
     for(auto id=0;id<this->connectedCameras();id++)

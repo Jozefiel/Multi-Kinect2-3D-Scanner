@@ -24,12 +24,15 @@ void Kinect::frames(std::atomic<bool> & keep_running)
                     filterFrames();
                     computeHist();
                     cloudData(false);
+
+                    new_frames_released=true;
+
 //                    cloneFrames();
 
                     cam_frames = new_cam_frames;
 
-                    now=std::chrono::system_clock::now();
-                    std::cout << "FRAME: "<<this->getId()<<" "<< std::chrono::duration_cast<std::chrono::milliseconds>(now - then).count() << " ms" << std::endl;
+//                    now=std::chrono::system_clock::now();
+//                    std::cout << "FRAME: "<<this->getId()<<" "<< std::chrono::duration_cast<std::chrono::milliseconds>(now - then).count() << " ms" << std::endl;
 
                     pListener->release(frame);
                 } catch(...)
@@ -55,25 +58,24 @@ bool Kinect::cloudData(bool compute_cloud_style)
     then=std::chrono::system_clock::now();
 
     try {
-            pcl::PointCloud<pcl::PointXYZRGB>::Ptr tmpCloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
-            tmpCloud->width = static_cast<uint32_t>(ir_depth_width);
-            tmpCloud->height = static_cast<uint32_t>(ir_depth_height);
-            tmpCloud->is_dense = false;
-            tmpCloud->points.resize( tmpCloud->width* tmpCloud->height);
+            pcl::PointCloud<pcl::PointXYZRGB> tmpCloud;
+            tmpCloud.width = static_cast<uint32_t>(ir_depth_width);
+            tmpCloud.height = static_cast<uint32_t>(ir_depth_height);
+            tmpCloud.is_dense = false;
+            tmpCloud.points.resize( tmpCloud.width* tmpCloud.height);
 
             if(compute_cloud_style==false)
                 this->registered2cloud(tmpCloud);
-            else
-                this->depth2cloud(tmpCloud);
 
-            pcl::transformPointCloud(*tmpCloud,*tmpCloud,transformation_matrix,true);
 
-            if(!tmpCloud->empty())
+            pcl::transformPointCloud(tmpCloud,tmpCloud,transformation_matrix,true);
+
+            if(!tmpCloud.empty())
             {
-                cloudInit(tmpCloud->points.size());
-                pcl::copyPointCloud(*tmpCloud,cam_frames.cloud);
+                cloudInit(tmpCloud.points.size());
+                pcl::copyPointCloud(tmpCloud,new_cam_frames.cloud);
             }
-            tmpCloud->clear();
+            tmpCloud.clear();
         }catch (...)
         {
             std::cout<<this->id<<" problem with  Kinect::cloudData"<<std::endl;
@@ -100,9 +102,7 @@ void Kinect::cloudData(std::atomic<bool> & keep_running, std::atomic<bool> & com
         tmpCloud->points.resize( tmpCloud->width* tmpCloud->height);
 
         if(compute_cloud_style==false)
-            this->registered2cloud(tmpCloud);
-        else
-            this->depth2cloud(tmpCloud);
+            this->registered2cloud(*tmpCloud);
 
         pcl::transformPointCloud(*tmpCloud,*tmpCloud,transformation_matrix,true);
 
@@ -123,12 +123,12 @@ void Kinect::cloudData(std::atomic<bool> & keep_running, std::atomic<bool> & com
 
 void Kinect::cloudInit(size_t size)
 {
-    cam_frames.cloud.clear();
-    cam_frames.cloud.is_dense = false;
-    cam_frames.cloud.points.resize(size);
+    new_cam_frames.cloud.clear();
+    new_cam_frames.cloud.is_dense = false;
+    new_cam_frames.cloud.points.resize(size);
 }
 
-void Kinect::registered2cloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &tmpCloud)
+void Kinect::registered2cloud(pcl::PointCloud<pcl::PointXYZRGB> &tmpCloud)
 {
     float x=0, y=0, z=0;
     unsigned long n=0;
@@ -156,69 +156,16 @@ void Kinect::registered2cloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &tmpCloud)
                 y=NAN;
             }
 
-            tmpCloud->points[n].x=x;
-            tmpCloud->points[n].y=y;
-            tmpCloud->points[n].z=z;
-            tmpCloud->points[n].r=r;
-            tmpCloud->points[n].g=g;
-            tmpCloud->points[n].b=b;
+            tmpCloud.points[n].x=x;
+            tmpCloud.points[n].y=y;
+            tmpCloud.points[n].z=z;
+            tmpCloud.points[n].r=r;
+            tmpCloud.points[n].g=g;
+            tmpCloud.points[n].b=b;
 
             n++;
         }
     }
     std::vector<int> removedPoints;
-    pcl::removeNaNFromPointCloud(*tmpCloud,*tmpCloud,removedPoints);
-}
-
-void Kinect::depth2cloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &tmpCloud)
-{
-
-//    double fy = 3.551063664968910e+02;
-//    double fx = 3.714166846959092e+02;
-//    double cy = 1.675200071820351e+02;
-//    double cx = 2.473181663244050e+02;
-
-    float fx = pt.get<float>("Calibration.depth_fx");
-    float fy = pt.get<float>("Calibration.depth_fy");
-    float cx = pt.get<float>("Calibration.depth_cx");
-    float cy = pt.get<float>("Calibration.depth_cy");
-    float scale = pt.get<float>("Calibration.depth_s");
-
-    uint32_t n=0;
-    double x=0, y=0, z=0;
-
-
-    for (int y_side = 0; y_side < ir_depth_width; y_side++)
-    {
-        for (int x_side = 0; x_side < ir_depth_height; x_side++)
-        {
-            double Z = this->cam_frames.rangedDepthMat.at<float>(x_side, y_side) / 1;
-            if(Z>0)
-            {
-                Z= scale /(Z * -0.0030711016 + 3.3309495161);
-                //Z=1*tan(Z/-0.0871 + 0.0549);
-                //for common calibration -> registration2cloud x is swaped with y
-                x=(y_side-cy)*Z/fy;
-                y=(x_side-cx)*Z/fx;
-                z=Z;
-            }
-            else
-            {
-                x=NAN;
-                y=NAN;
-                z=NAN;
-            }
-
-            tmpCloud->points[n].x=x;
-            tmpCloud->points[n].y=y;
-            tmpCloud->points[n].z=z;
-            tmpCloud->points[n].r=this->cam_frames.rangedRGBDMat.at<cv::Vec3b>(x_side,y_side)[2];
-            tmpCloud->points[n].g=this->cam_frames.rangedRGBDMat.at<cv::Vec3b>(x_side,y_side)[1];
-            tmpCloud->points[n].b=this->cam_frames.rangedRGBDMat.at<cv::Vec3b>(x_side,y_side)[0];
-            n++;
-        }
-    }
-
-    std::vector<int> removedPoints;
-    pcl::removeNaNFromPointCloud(*tmpCloud,*tmpCloud,removedPoints);
+    pcl::removeNaNFromPointCloud(tmpCloud,tmpCloud,removedPoints);
 }

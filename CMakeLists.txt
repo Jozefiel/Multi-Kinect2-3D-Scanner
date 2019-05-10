@@ -12,8 +12,6 @@ if(CCACHE_FOUND)
 endif(CCACHE_FOUND)
 set (CMAKE_CXX_FLAGS "-DPCL_ONLY_CORE_POINT_TYPES=ON -DNO_EXPLICIT_INSTANTIATIONS")
 
-set(CMAKE_AUTOUIC_SEARCH_PATHS your/folder/here)
-
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
@@ -53,7 +51,7 @@ add_executable(${PROJECT}  ${SRCS} ${UIS_HDRS})
 qt5_use_modules(${PROJECT_NAME} Widgets)
 
 
-target_link_libraries(${PROJECT} ${PCL_LIBRARIES} ${PCL_FILTERS_LIBRARIES} ${OpenCV_LIBRARIES} ${freenect2_LIBRARY} ${CMAKE_THREAD_LIBS_INIT} Qt5::Core Qt5::Widgets Qt5::Gui)
+target_link_libraries(${PROJECT} ${PCL_LIBRARIES} ${PCL_FILTERS_LIBRARIES} ${OpenCV_LIBRARIES} ${freenect2_LIBRARY} ${CMAKE_THREAD_LIBS_INIT} Qt5::Core Qt5::Widgets Qt5::Gui -lstdc++fs)
 
 #libfreenect cmake settings
 FIND_LIBRARY(freenect2_LIBRARY freenect2
@@ -71,9 +69,9 @@ SET(freenect2_INCLUDE_DIRS ${freenect2_INCLUDE_DIR})
 #compilator settings
 
 set_target_properties(${PROJECT} PROPERTIES
-        CXX_STANDARD_REQUIRED 14
+        CXX_STANDARD_REQUIRED 17
         CXX_EXTENSIONS ON
 )
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++14")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++17")
 

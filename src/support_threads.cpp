@@ -6,7 +6,7 @@ void support::cameraInit()
     this->kinectInit();
     this->realsenseInit();
 
-    cam_frames = new std::vector<std::queue<Camera::camera_frames>>(connected_cams.size());
+    cam_frames = new std::vector<std::vector<Camera::camera_frames>>(connected_cams.size());
     counter_frame = new std::vector<std::queue<int>>(connected_cams.size());
 }
 
@@ -61,23 +61,9 @@ void support::threadCameraSnapping()
     std::cout<<"support::threadCameraSnapping started"<<std::endl;
 }
 
-void support::threadComputePointCloud()
-{
-    for (auto cloud_threads_counter=0; cloud_threads_counter<this->connectedCameras(); cloud_threads_counter++)  //run threads with frames function, snapping RGB, Depth, Ir for Kinect
-    {
-        cloud_threads.push_back(std::thread(&Camera::cloudData,this->cameras()[cloud_threads_counter],std::ref(snap_running),std::ref(compute_cloud_style)));
-    }
-
-    for (auto cloud_threads_counter=0; cloud_threads_counter<this->connectedCameras(); cloud_threads_counter++)     //detach threads
-    {
-        cloud_threads[cloud_threads_counter].detach();
-    }
-    std::cout<<"support::threadComputePointCloud started"<<std::endl;
-}
-
 void support::threadFrameUpdater()
 {
-  //  viewer_threads.push_back(std::thread(&support::viewerUpdater,this,std::ref(snap_running)));
+ //   viewer_threads.push_back(std::thread(&support::viewerUpdater,this,std::ref(snap_running)));
  //  viewer_threads.push_back(std::thread(&support::pclUpdater,this,std::ref(snap_running)));
     viewer_threads.push_back(std::thread(&support::frameUpdater,this,std::ref(snap_running)));
 
@@ -86,6 +72,37 @@ void support::threadFrameUpdater()
         viewer_threads[viewer_threads_counter].detach();
     }
 }
+
+void support::camera2framesDataTransfer()
+{
+    for(unsigned long id=0;id<static_cast<unsigned long>(this->connectedCameras());id++)
+    {
+        if(connected_cams[id]->getFramesReleasedCheck())
+        {
+            Camera::camera_frames tmp_cam_frames;
+
+            tmp_cam_frames.depthMat= connected_cams[id]->getFrames().depthMat.clone();
+            tmp_cam_frames.rgbdMat= connected_cams[id]->getFrames().rgbdMat.clone();
+            tmp_cam_frames.colorMat= connected_cams[id]->getFrames().colorMat.clone();
+            tmp_cam_frames.irMat= connected_cams[id]->getFrames().irMat.clone();
+            tmp_cam_frames.histMat= connected_cams[id]->getFrames().histMat.clone();
+            tmp_cam_frames.mask= connected_cams[id]->getFrames().mask.clone();
+            tmp_cam_frames.rangedRGBDMat= connected_cams[id]->getFrames().rangedRGBDMat.clone();
+            tmp_cam_frames.rangedDepthMat= connected_cams[id]->getFrames().rangedDepthMat.clone();
+            tmp_cam_frames.cloud = connected_cams[id]->getFrames().cloud;
+
+            connected_cams[id]->resetFramesReleased();
+
+            cam_frames[0][id].emplace_back(tmp_cam_frames);
+            if( cam_frames[0][id].size()>7)
+            {
+                cam_frames[0][id].erase(cam_frames[0][id].begin());
+            }
+        }
+
+    }
+}
+
 
 void support::closeThreads()
 {

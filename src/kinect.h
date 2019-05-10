@@ -63,7 +63,7 @@ public:
 
 
     void        depth2cloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr  &tmpCloud);
-    void        registered2cloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &tmpCloud);
+    void        registered2cloud(pcl::PointCloud<pcl::PointXYZRGB> &tmpCloud);
 
     bool        cloudData(bool);
     void        cloudData(std::atomic<bool> & keep_running, std::atomic<bool> &compute_cloud_style); // kinect wrapper to pcl
@@ -99,7 +99,6 @@ private:
     libfreenect2::SyncMultiFrameListener * pListener    = nullptr;
     libfreenect2::FrameMap frame;
 
-
     struct libfnct_frames
     {
         libfreenect2::Frame *undistortedDepth = new libfreenect2::Frame(ir_depth_width, ir_depth_height, ir_depth_bpp);
@@ -107,6 +106,8 @@ private:
         libfreenect2::Frame *registered     = new libfreenect2::Frame(ir_depth_width, ir_depth_height, ir_depth_bpp);
         libfreenect2::Frame *depth2rgb      = new libfreenect2::Frame(color_width,color_height, color_bpp);
     };
+
+
 
 
     std::timed_mutex frame_mutex;

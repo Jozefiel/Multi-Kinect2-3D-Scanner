@@ -5,28 +5,6 @@ support::support(QObject *parent) : QObject(parent)
 
 }
 
-void support::camera2framesDataTransfer()
-{
-    for(unsigned long id=0;id<static_cast<unsigned long>(this->connectedCameras());id++)
-    {
-        Camera::camera_frames tmp_cam_frames;
-
-        tmp_cam_frames.depthMat= connected_cams[id]->getFrames().depthMat.clone();
-        tmp_cam_frames.rgbdMat= connected_cams[id]->getFrames().rgbdMat.clone();
-        tmp_cam_frames.colorMat= connected_cams[id]->getFrames().colorMat.clone();
-        tmp_cam_frames.irMat= connected_cams[id]->getFrames().irMat.clone();
-        tmp_cam_frames.histMat= connected_cams[id]->getFrames().histMat.clone();
-        tmp_cam_frames.mask= connected_cams[id]->getFrames().mask.clone();
-        tmp_cam_frames.rangedRGBDMat= connected_cams[id]->getFrames().rangedRGBDMat.clone();
-        tmp_cam_frames.rangedDepthMat= connected_cams[id]->getFrames().rangedDepthMat.clone();
-        tmp_cam_frames.cloud = connected_cams[id]->getFrames().cloud;
-
-        cam_frames[0][id].emplace(tmp_cam_frames);
-        if( cam_frames[0][id].size()>7)
-                cam_frames[0][id].pop();
-    }
-}
-
 void support::saveSequence()
 {
     std::vector<Camera::camera_frames> frames;
@@ -42,13 +20,6 @@ void support::saveSequence()
 
 //support
 
-std::string support::IntToStr(int n)
-{
-    std::stringstream result;
-    result << n;
-    return result.str();
-}
-
 void support::changeComputeStyle(int state)
 {
     if(state==0)
@@ -57,6 +28,45 @@ void support::changeComputeStyle(int state)
         compute_cloud_style=true;
 
 }
+
+void support::saveData()
+{
+    auto tmp_cam_frame=cam_frames;
+
+    time_t acc_time = time(nullptr);
+    std::tm* now = std::localtime(&acc_time);
+
+    std::string path = "output/tmp/" + IntToStr(now->tm_year + 1900)+'_'+IntToStr(now->tm_mon + 1)+'_'+IntToStr(now->tm_mday)+'_'+IntToStr(now->tm_hour)+'_'+IntToStr(now->tm_min)+'_'+IntToStr(now->tm_sec);
+    if(this->createDirectory(path))
+    {
+        for(unsigned long i=0; i<tmp_cam_frame->size();i++)
+        {
+            for(unsigned long j=0; j<tmp_cam_frame->at(0).size();j++)
+            {
+                cv::imwrite(path + "/depth_" + IntToStr(i) + "_" + IntToStr(j) + ".hdr",tmp_cam_frame->at(i).at(j).rangedDepthMat);
+                cv::imwrite(path + "/rgbd" + IntToStr(i) + "_" + IntToStr(j) + ".jpeg",tmp_cam_frame->at(i).at(j).rangedRGBDMat);
+                pcl::io::savePLYFileBinary(path + "/cloud" + IntToStr(i) + "_" + IntToStr(j) + ".ply" ,tmp_cam_frame->at(i).at(j).cloud);
+            }
+        }
+    }
+}
+
+
+bool support::createDirectory(std::string path)
+{
+    fs::file_status s = fs::file_status{};
+
+    if(fs::status_known(s) ? fs::exists(s) : fs::exists(path))
+    {
+        return false;
+    }
+    else
+    {
+        fs::create_directories(path);
+        return true;
+    }
+}
+
 
 void support::saveLUT(cv::Mat depth, cv::Mat rgbd, std::string filename,int counter)
 {

@@ -78,6 +78,9 @@ public:
     void morphFrames(cv::Mat  &tmpDepthMat, cv::Mat  &tmpRGBDMat, cv::Mat &tmpMask);
     void faceDetection(cv::Mat  rangedRGBD, cv::Mat  rgbd);
 
+    bool getFramesReleasedCheck() {return new_frames_released; }
+    void resetFramesReleased() { new_frames_released=false; }
+
     virtual pcl::PointCloud<pcl::PointXYZRGB> getCloudData()   = 0;
 
     Eigen::Matrix4d transformation_matrix;
@@ -85,6 +88,7 @@ public:
 
     std::string serial, camera_type;
     int id=0;
+    bool new_frames_released=false;
 
 private:
 
