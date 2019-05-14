@@ -73,7 +73,6 @@ protected:
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr ethalon = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
     pcl::visualization::PCLVisualizer  * viewer=nullptr;
-    int saved_frame_counter=0;
 private:
     Ui::MainWindow *ui;
 

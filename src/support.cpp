@@ -5,6 +5,7 @@ support::support(QObject *parent) : QObject(parent)
 
 }
 
+
 void support::saveSequence()
 {
     std::vector<Camera::camera_frames> frames;
@@ -45,7 +46,7 @@ void support::saveData()
             {
                 cv::imwrite(path + "/depth_" + IntToStr(i) + "_" + IntToStr(j) + ".hdr",tmp_cam_frame->at(i).at(j).rangedDepthMat);
                 cv::imwrite(path + "/rgbd" + IntToStr(i) + "_" + IntToStr(j) + ".jpeg",tmp_cam_frame->at(i).at(j).rangedRGBDMat);
-                pcl::io::savePLYFileBinary(path + "/cloud" + IntToStr(i) + "_" + IntToStr(j) + ".ply" ,tmp_cam_frame->at(i).at(j).cloud);
+//                pcl::io::savePLYFileBinary(path + "/cloud" + IntToStr(i) + "_" + IntToStr(j) + ".ply" ,tmp_cam_frame->at(i).at(j).cloud);
             }
         }
     }

@@ -1,5 +1,6 @@
  #ifndef PCL_H
 #define PCL_H
+#include "globalsettings.h"
 
 #include <pcl/visualization/cloud_viewer.h>
 #include <pcl/point_types.h>
@@ -12,7 +13,7 @@
 #include <pcl/filters/statistical_outlier_removal.h>
 #include <pcl/2d/morphology.h>
 
-
+#include <pcl/search/impl/search.hpp>
 #include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/features/normal_3d.h>
 #include <pcl/surface/gp3.h>
@@ -32,7 +33,7 @@ public:
 
     void pclAddCloud(pcl::PointCloud<pcl::PointXYZRGB> cloud, int);
     void pclCopyCloud(pcl::PointCloud<pcl::PointXYZRGB> kinect_cloud);
-    pcl::PointCloud<pcl::PointXYZRGB> getCloud() { return cloud; }
+    std::vector<pcl::PointCloud<pcl::PointXYZRGB>> getCloud() { return camera_clouds; }
 
 
     void setTransformationMatrix(Eigen::Matrix4d transform);
@@ -40,8 +41,10 @@ public:
     void transformPointCloud();
     void transformPointCloud(Eigen::Matrix4d transform);
     pcl::PointCloud<pcl::PointXYZRGB> getTransformedCloud() { return transformed_cloud; }
+    pcl::PointCloud<pcl::PointXYZRGB> getMergedCloud() { return cloud; }
+
     void removeOutliers(int meanK, double mulTresh);
-    void mergeClouds(std::vector<pcl::PointCloud<pcl::PointXYZRGB>> clouds);
+    bool mergeClouds();
 
 
     void computeNormals();
@@ -51,8 +54,12 @@ public:
 
 
 private:
+
     int id=0;
     std::string serial = "";
+
+    std::vector<pcl::PointCloud<pcl::PointXYZRGB>> camera_clouds;
+    std::shared_ptr<GlobalSettings> globalSettings = globalSettings->instance();
 
     Eigen::Matrix4d transform_matrix;
     pcl::PointCloud<pcl::PointXYZRGB> cloud ;//= pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);

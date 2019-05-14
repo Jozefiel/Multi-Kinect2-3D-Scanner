@@ -7,7 +7,6 @@ void support::cameraInit()
     this->realsenseInit();
 
     cam_frames = new std::vector<std::vector<Camera::camera_frames>>(connected_cams.size());
-    counter_frame = new std::vector<std::queue<int>>(connected_cams.size());
 }
 
 void support::kinectInit()
@@ -42,7 +41,6 @@ int support::connectedCameras()
 void support::threadsInit()
 {
     this->threadCameraSnapping();
-//    this->threadComputePointCloud();
     this->threadFrameUpdater();
 }
 
@@ -73,8 +71,9 @@ void support::threadFrameUpdater()
     }
 }
 
-void support::camera2framesDataTransfer()
+bool support::camera2framesDataTransfer()
 {
+    bool updater=false;
     for(unsigned long id=0;id<static_cast<unsigned long>(this->connectedCameras());id++)
     {
         if(connected_cams[id]->getFramesReleasedCheck())
@@ -93,16 +92,41 @@ void support::camera2framesDataTransfer()
 
             connected_cams[id]->resetFramesReleased();
 
-            cam_frames[0][id].emplace_back(tmp_cam_frames);
-            if( cam_frames[0][id].size()>7)
+            if(frame_mutex.try_lock_for(std::chrono::milliseconds(mutex_lock_time)))
+            {
+                cam_frames[0][id].emplace_back(tmp_cam_frames);
+
+                frame_mutex.unlock();
+            }
+
+            if( static_cast<int>(cam_frames[0][id].size())>globalSettings.operator->()->getBufferSize())
             {
                 cam_frames[0][id].erase(cam_frames[0][id].begin());
+                updater=true;
             }
+        }
+    }
+    return updater;
+}
+
+bool support::framesClouds2pclDataTransfer()
+{
+    for(unsigned long id=0; id< clouds.size();id++)
+    {
+        if(frame_mutex.try_lock_for(std::chrono::milliseconds(mutex_lock_time)))
+        {
+            clouds[id].pclCopyCloud(cam_frames->at(id).back().cloud);
+            frame_mutex.unlock();
+        }
+        try {
+//            if(clouds[id].mergeClouds())
+//                return true;
+        } catch (...) {
+            return false;
         }
 
     }
 }
-
 
 void support::closeThreads()
 {

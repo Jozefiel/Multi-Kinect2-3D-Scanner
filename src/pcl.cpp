@@ -45,7 +45,6 @@ pclCloud::pclCloud(int cam_id, std::string cam_serial)
         transform_matrix (3,2) = 0;
         transform_matrix (3,3) = 1;
     }
-
 }
 
 pclCloud::pclCloud(int cam_id)
@@ -56,14 +55,12 @@ pclCloud::pclCloud(int cam_id)
 
 void pclCloud::pclCopyCloud(pcl::PointCloud<pcl::PointXYZRGB> cam_cloud)
 {
-    if(!cam_cloud.empty())
+    auto tmp_cloud=cam_cloud;
+
+    camera_clouds.emplace_back(tmp_cloud);
+    if( static_cast<int>(camera_clouds.size())>globalSettings.operator->()->getBufferSize())
     {
-        cloud.clear();
-        pcl::copyPointCloud(cam_cloud,cloud);
-    }
-    else
-    {
-        std::cout<<"empty cloud: "<<this->id<<std::endl;
+        camera_clouds.pop_back();
     }
 }
 
@@ -135,14 +132,19 @@ void pclCloud::computeNormals()
 //    ne.compute (*normals_cloud);
 }
 
-void pclCloud::mergeClouds(std::vector<pcl::PointCloud<pcl::PointXYZRGB>> clouds)
+bool pclCloud::mergeClouds()
 {
-    cloud.clear();
-    for(auto i=0;i<clouds.size();i++)
-    {
-        if(!clouds[i].empty())
-            cloud+=clouds[i];
-    }
+//    try {
+//        cloud.clear();
+//        for(ulong i=0;i<clouds.size();i++)
+//        {
+//            if(!clouds[i].empty())
+//                cloud+=clouds[i];
+//        }
+//    } catch (...)
+//    {
+//        std::cout<<this->id<<" Problem with  pclCloud::mergeClouds"<<std::endl;
+//    }
 }
 
 void pclCloud::creteMesh(int kSearch)

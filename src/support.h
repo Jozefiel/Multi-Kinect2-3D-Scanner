@@ -4,6 +4,7 @@
 #include "camera.h"
 #include "kinect.h"
 #include "pcl.h"
+#include "globalsettings.h"
 
 #include <queue>
 #include <experimental/filesystem>
@@ -33,13 +34,17 @@ public:
 
     void threadsInit();
     void threadCameraSnapping();
-    void camera2framesDataTransfer();
+    bool camera2framesDataTransfer();
+    bool framesClouds2pclDataTransfer();
+
     void threadFrameUpdater();
     void closeThreads();
 
     void cloudInit();
     void transformCloud();
     void transformCloud(std::vector<Eigen::Matrix4d> transform_matrix);
+
+    void viewerUpdater();
 
     pcl::PointCloud<pcl::PointXYZRGB> getCloudData(int id);
     pcl::PointCloud<pcl::PointXYZRGB> getTransformedCloudData(int id);
@@ -49,7 +54,6 @@ public:
 
     std::vector<Camera *> getConnectedCams();
 
-    void viewerUpdater(std::atomic<bool> & snap_running);
     void pclUpdater(std::atomic<bool> &snap_running);
     void frameUpdater(std::atomic<bool> &snap_running);
     void changeComputeStyle(int);
@@ -76,6 +80,8 @@ public:
 
 private:
 
+    std::shared_ptr<GlobalSettings> globalSettings = globalSettings->instance();
+
     std::vector<Camera*>        connected_cams;                                            // vector of Camera objects
     std::vector<pclCloud>       clouds;
     std::vector<std::thread>    cam_threads;                                           // vector of threads for image snapping
@@ -86,6 +92,10 @@ private:
 
     std::atomic<bool> compute_cloud_style {false};
     std::vector<pcl::PointCloud<pcl::PointXYZRGB>> merged_clouds;
+
+    std::timed_mutex frame_mutex;
+
+
 
 signals:
     void newRGBD(QPixmap pix,int id);

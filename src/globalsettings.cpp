@@ -1,6 +1,6 @@
 #include "globalsettings.h"
 
-globalSettings::globalSettings()
+GlobalSettings::GlobalSettings()
 {
 
 }
