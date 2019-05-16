@@ -47,21 +47,18 @@ void support::viewerUpdater()
     }  catch (...) { }
 }
 
-
 void support::pclUpdater(std::atomic<bool> &snap_running)
 {
-    merged_cloud= new pclCloud(4);
     while(snap_running)
     {
 //        this->camera2cloudDataTransfer();   // store cloud to pcl objects
         //merged_cloud->mergeClouds(this->mergeClouds(false));//! error when true, random fallings
 
-        if(!merged_cloud->getCloud().empty())
-            emit newCloud();
+//        if(!merged_cloud->getCloud().empty())
+//            emit newCloud();
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
 }
-
 
 void support::frameUpdater(std::atomic<bool> &snap_running)
 {

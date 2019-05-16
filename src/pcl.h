@@ -26,14 +26,17 @@
 class pclCloud
 {
 public:
-    pclCloud(int cam_id, std::string cam_serial);
-    pclCloud(int cam_id);
+    pclCloud(int cam_id, int connectedCam);
 
-    ~pclCloud();
+    bool pclCopyCloud(pcl::PointCloud<pcl::PointXYZRGB> kinect_cloud, int camId);
+    bool mergeClouds(int camId);
+    pcl::PointCloud<pcl::PointXYZRGB> getMergedCloud();
 
-    void pclAddCloud(pcl::PointCloud<pcl::PointXYZRGB> cloud, int);
-    void pclCopyCloud(pcl::PointCloud<pcl::PointXYZRGB> kinect_cloud);
-    std::vector<pcl::PointCloud<pcl::PointXYZRGB>> getCloud() { return camera_clouds; }
+
+
+
+
+//    std::vector<pcl::PointCloud<pcl::PointXYZRGB>> getCloud() { return camera_clouds; }
 
 
     void setTransformationMatrix(Eigen::Matrix4d transform);
@@ -41,10 +44,8 @@ public:
     void transformPointCloud();
     void transformPointCloud(Eigen::Matrix4d transform);
     pcl::PointCloud<pcl::PointXYZRGB> getTransformedCloud() { return transformed_cloud; }
-    pcl::PointCloud<pcl::PointXYZRGB> getMergedCloud() { return cloud; }
 
     void removeOutliers(int meanK, double mulTresh);
-    bool mergeClouds();
 
 
     void computeNormals();
@@ -52,17 +53,19 @@ public:
 
     void creteMesh(int kSearch);
 
-
+    ~pclCloud();
 private:
 
     int id=0;
-    std::string serial = "";
+    std::vector<std::vector<pcl::PointCloud<pcl::PointXYZRGB>>> camera_clouds;
+    std::vector<pcl::PointCloud<pcl::PointXYZRGB>> camera_merged_clouds;
 
-    std::vector<pcl::PointCloud<pcl::PointXYZRGB>> camera_clouds;
     std::shared_ptr<GlobalSettings> globalSettings = globalSettings->instance();
 
+
+
     Eigen::Matrix4d transform_matrix;
-    pcl::PointCloud<pcl::PointXYZRGB> cloud ;//= pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
+    //= pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
     pcl::PointCloud<pcl::PointXYZRGB> transformed_cloud ;//= pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
     pcl::PointCloud<pcl::Normal> normals_cloud ;//= pcl::PointCloud<pcl::Normal>::Ptr(new pcl::PointCloud<pcl::Normal>);
 

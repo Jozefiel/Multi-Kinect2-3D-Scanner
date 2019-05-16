@@ -5,20 +5,6 @@ support::support(QObject *parent) : QObject(parent)
 
 }
 
-
-void support::saveSequence()
-{
-    std::vector<Camera::camera_frames> frames;
-
-    for(auto i=0; i<8;i++)
-    {
-        frames.push_back(connected_cams[0]->getFrames());
-
-        std::cout<<i;
-    }
-}
-
-
 //support
 
 void support::changeComputeStyle(int state)

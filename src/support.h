@@ -29,7 +29,7 @@ public:
     void cameraInit();
     void kinectInit();
     void realsenseInit();
-    int connectedCameras();
+    int connectedCameras() { return static_cast<int>(connected_cams.size());}
     std::vector<Camera*> cameras();
 
     void threadsInit();
@@ -60,7 +60,6 @@ public:
     void saveLUT(cv::Mat depth, cv::Mat rgbd, std::string filename, int counter);
     std::atomic<bool> snap_running {true};
     pcl::PointCloud<pcl::PointXYZRGB> cloudik;
-    pclCloud * merged_cloud;
     void saveSequence();
 
     void saveData();
@@ -94,8 +93,6 @@ private:
     std::vector<pcl::PointCloud<pcl::PointXYZRGB>> merged_clouds;
 
     std::timed_mutex frame_mutex;
-
-
 
 signals:
     void newRGBD(QPixmap pix,int id);

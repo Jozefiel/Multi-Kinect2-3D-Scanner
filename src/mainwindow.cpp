@@ -92,7 +92,7 @@ void MainWindow::onNewCloud()
 
     viewer->removePointCloud("cloud");
     viewer->removePointCloud("normals");
-//    viewer->addPointCloud(std::const_pointer_cast<const int>(Support[0]->getClouds()[0].getCloud())), "cloud");
+//    viewer->addPointCloud(Support[0]->getClouds()[0].getCloud()), "cloud");
 //    Support[0]->merged_cloud->computeNormals();
 
 //    viewer->addPointCloudNormals<pcl::PointXYZRGB, pcl::Normal>(Support[0]->merged_cloud->getCloud(),Support[0]->merged_cloud->getCloudNormals(),10,0.03, "normals");

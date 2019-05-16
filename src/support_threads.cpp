@@ -31,11 +31,6 @@ std::vector<Camera*> support::cameras()
     return connected_cams;
 }
 
-int support::connectedCameras()
-{
- return static_cast<int>(connected_cams.size());
-}
-
 //THREADS
 
 void support::threadsInit()
@@ -92,11 +87,11 @@ bool support::camera2framesDataTransfer()
 
             connected_cams[id]->resetFramesReleased();
 
-            if(frame_mutex.try_lock_for(std::chrono::milliseconds(mutex_lock_time)))
+            if(this->cameras()[id]->lockFrames(mutex_lock_time))
             {
                 cam_frames[0][id].emplace_back(tmp_cam_frames);
 
-                frame_mutex.unlock();
+                this->cameras()[id]->unlockFrames();
             }
 
             if( static_cast<int>(cam_frames[0][id].size())>globalSettings.operator->()->getBufferSize())
@@ -111,21 +106,30 @@ bool support::camera2framesDataTransfer()
 
 bool support::framesClouds2pclDataTransfer()
 {
-    for(unsigned long id=0; id< clouds.size();id++)
+
+    std::chrono::system_clock::time_point then, now;
+    for(auto id=0; id< connected_cams.size();id++)
     {
-        if(frame_mutex.try_lock_for(std::chrono::milliseconds(mutex_lock_time)))
+        then=std::chrono::system_clock::now();
+
+        if(this->cameras()[id]->lockFrames(5))
         {
-            clouds[id].pclCopyCloud(cam_frames->at(id).back().cloud);
-            frame_mutex.unlock();
+            auto _cam_frames = cam_frames;
+
+            clouds[0].pclCopyCloud(_cam_frames->at(static_cast<ulong>(id)).back().cloud,id);
+   //         clouds[0].mergeClouds(id);
+            this->cameras()[id]->unlockFrames();
+
         }
+        now=std::chrono::system_clock::now();
+        std::cout <<"Id: "<<id << " " <<std::chrono::duration_cast<std::chrono::milliseconds>(now - then).count() << " ms" << std::endl;
+    }
         try {
-//            if(clouds[id].mergeClouds())
-//                return true;
+//            if(clouds[0].mergeClouds(id))
+                return true;
         } catch (...) {
             return false;
         }
-
-    }
 }
 
 void support::closeThreads()

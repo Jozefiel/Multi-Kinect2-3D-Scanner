@@ -26,7 +26,7 @@ public:
 private:
     GlobalSettings();
 
-    int buffer_size=50;
+    int buffer_size=7;
 
 };
 
