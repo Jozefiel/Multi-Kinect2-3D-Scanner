@@ -9,6 +9,8 @@
 #include <queue>
 #include <experimental/filesystem>
 #include <ctime>
+#include <mutex>
+#include <thread>
 
 #include <QObject>
 #include <QImage>
@@ -41,21 +43,27 @@ public:
     void closeThreads();
 
     void cloudInit();
+
+
+    void viewerUpdater();
+    void pclUpdater();
+    void frameUpdater(std::atomic<bool> &snap_running);
+
+
+
     void transformCloud();
     void transformCloud(std::vector<Eigen::Matrix4d> transform_matrix);
 
-    void viewerUpdater();
 
     pcl::PointCloud<pcl::PointXYZRGB> getCloudData(int id);
     pcl::PointCloud<pcl::PointXYZRGB> getTransformedCloudData(int id);
-    std::vector<pclCloud> getClouds();
+    std::vector<std::shared_ptr<pclCloud>> getClouds();
     std::vector<pcl::PointCloud<pcl::PointXYZRGB>> mergeClouds(bool transformed);
     std::vector<pcl::PointCloud<pcl::PointXYZRGB>> mergeClouds(bool transformed, std::vector<Eigen::Matrix4d> transform_matrix);
 
     std::vector<Camera *> getConnectedCams();
 
-    void pclUpdater(std::atomic<bool> &snap_running);
-    void frameUpdater(std::atomic<bool> &snap_running);
+
     void changeComputeStyle(int);
     void saveLUT(cv::Mat depth, cv::Mat rgbd, std::string filename, int counter);
     std::atomic<bool> snap_running {true};
@@ -73,26 +81,20 @@ public:
         return result.str();
     }
 
-    int counter=0;
-    std::vector<std::queue<int>> * counter_frame=nullptr;
-
 
 private:
 
-    std::shared_ptr<GlobalSettings> globalSettings = globalSettings->instance();
-
-    std::vector<Camera*>        connected_cams;                                            // vector of Camera objects
-    std::vector<pclCloud>       clouds;
-    std::vector<std::thread>    cam_threads;                                           // vector of threads for image snapping
-    std::vector<std::thread>    cloud_threads;
-    std::vector<std::thread>    viewer_threads;
+    std::shared_ptr<GlobalSettings>         globalSettings = globalSettings->instance();
+    std::vector<Camera*>                    connected_cams;                                            // vector of Camera objects
+    std::vector<std::shared_ptr<pclCloud>>  clouds;
+    std::vector<std::thread>                cam_threads;                                           // vector of threads for image snapping
+    std::vector<std::thread>                cloud_threads;
+    std::vector<std::thread>                viewer_threads;
 
     std::vector<std::vector<Camera::camera_frames>> * cam_frames=nullptr;
 
     std::atomic<bool> compute_cloud_style {false};
     std::vector<pcl::PointCloud<pcl::PointXYZRGB>> merged_clouds;
-
-    std::timed_mutex frame_mutex;
 
 signals:
     void newRGBD(QPixmap pix,int id);

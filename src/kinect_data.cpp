@@ -59,10 +59,10 @@ bool Kinect::cloudData(bool compute_cloud_style)
 
     try {
             pcl::PointCloud<pcl::PointXYZRGB> tmpCloud;
-            tmpCloud.width = static_cast<uint32_t>(ir_depth_width);
-            tmpCloud.height = static_cast<uint32_t>(ir_depth_height);
-            tmpCloud.is_dense = false;
-            tmpCloud.points.resize( tmpCloud.width* tmpCloud.height);
+            tmpCloud.clear();
+//            tmpCloud.width = static_cast<uint32_t>(ir_depth_width);
+//            tmpCloud.height = static_cast<uint32_t>(ir_depth_height);
+//            tmpCloud.is_dense = false;
 
             if(compute_cloud_style==false)
                 this->registered2cloud(tmpCloud);
@@ -86,46 +86,12 @@ bool Kinect::cloudData(bool compute_cloud_style)
 }
 
 
-void Kinect::cloudData(std::atomic<bool> & keep_running, std::atomic<bool> & compute_cloud_style )
-{
-    std::chrono::system_clock::time_point then, now;
-    Eigen::Matrix4d transform = transformation_matrix;
-
-    while(keep_running)
-    {
-//        then=std::chrono::system_clock::now();
-
-        pcl::PointCloud<pcl::PointXYZRGB>::Ptr tmpCloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
-        tmpCloud->width = static_cast<uint32_t>(ir_depth_width);
-        tmpCloud->height = static_cast<uint32_t>(ir_depth_height);
-        tmpCloud->is_dense = false;
-        tmpCloud->points.resize( tmpCloud->width* tmpCloud->height);
-
-        if(compute_cloud_style==false)
-            this->registered2cloud(*tmpCloud);
-
-        pcl::transformPointCloud(*tmpCloud,*tmpCloud,transformation_matrix,true);
-
-        if(!tmpCloud->empty())
-        {
-            if(cloud_mutex.try_lock_for(std::chrono::milliseconds(mutex_lock_time)))
-            {
-                cloudInit(tmpCloud->points.size());
-                pcl::copyPointCloud(*tmpCloud,cam_frames.cloud);
-                cloud_mutex.unlock();
-            }
-        }
-        tmpCloud->clear();
-//        now=std::chrono::system_clock::now();
-//        std::cout << "CLOUD: "<<this->getId()<<" "<< std::chrono::duration_cast<std::chrono::milliseconds>(now - then).count() << " ms" << std::endl;
-    }
-}
-
 void Kinect::cloudInit(size_t size)
 {
     new_cam_frames.cloud.clear();
-    new_cam_frames.cloud.is_dense = false;
-    new_cam_frames.cloud.points.resize(size);
+//    new_cam_frames.cloud.points.resize(size);
+//    new_cam_frames.cloud.height=1;
+//    new_cam_frames.cloud.width=static_cast<uint32_t>(size);
 }
 
 void Kinect::registered2cloud(pcl::PointCloud<pcl::PointXYZRGB> &tmpCloud)
@@ -143,29 +109,49 @@ void Kinect::registered2cloud(pcl::PointCloud<pcl::PointXYZRGB> &tmpCloud)
             uint8_t g = p[1];
             uint8_t r = p[2];
 
-            if(std::isinf(x) || std::isinf(y) ||  std::isinf(z) )
+            if(std::isinf(x) || std::isinf(y) ||  std::isinf(z) || std::isnan(x) || std::isnan(y) || std::isnan(z) || z > static_cast<float>(maximal_depth))
             {
-                x=NAN;
-                z=NAN;
-                y=NAN;
+//                x=NAN;
+//                z=NAN;
+//                y=NAN;
             }
-            else if ( z > static_cast<float>(maximal_depth) )
+            else
             {
-                x=NAN;
-                z=NAN;
-                y=NAN;
+                pcl::PointXYZRGB point;
+                point.x=x;
+                point.y=y;
+                point.z=z;
+                point.r=r;
+                point.g=g;
+                point.b=b;
+                tmpCloud.points.push_back(point);
             }
 
-            tmpCloud.points[n].x=x;
-            tmpCloud.points[n].y=y;
-            tmpCloud.points[n].z=z;
-            tmpCloud.points[n].r=r;
-            tmpCloud.points[n].g=g;
-            tmpCloud.points[n].b=b;
+
+//            if(std::isinf(x) || std::isinf(y) ||  std::isinf(z) )
+//            {
+//                x=NAN;
+//                z=NAN;
+//                y=NAN;
+//            }
+//            else if ( z > static_cast<float>(maximal_depth) )
+//            {
+//                x=NAN;
+//                z=NAN;
+//                y=NAN;
+//            }
+
+//            tmpCloud.points[n].x=x;
+//            tmpCloud.points[n].y=y;
+//            tmpCloud.points[n].z=z;
+//            tmpCloud.points[n].r=r;
+//            tmpCloud.points[n].g=g;
+//            tmpCloud.points[n].b=b;
 
             n++;
         }
     }
-    std::vector<int> removedPoints;
-    pcl::removeNaNFromPointCloud(tmpCloud,tmpCloud,removedPoints);
+//    std::vector<int> removedPoints;
+//    pcl::removeNaNFromPointCloud(tmpCloud,tmpCloud,removedPoints);
+    tmpCloud.resize(tmpCloud.points.size());
 }

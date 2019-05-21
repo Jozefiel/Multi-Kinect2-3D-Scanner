@@ -20,6 +20,7 @@
 
 #include <chrono>
 #include <thread>
+#include <mutex>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/ini_parser.hpp>
 
@@ -30,17 +31,17 @@ public:
 
     bool pclCopyCloud(pcl::PointCloud<pcl::PointXYZRGB> kinect_cloud, int camId);
     bool mergeClouds(int camId);
-    pcl::PointCloud<pcl::PointXYZRGB> getMergedCloud();
+    bool mergeAllClouds();
+    bool mergeLastClouds();
 
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr getMergedCloud();
 
-
+    bool lockCloud(int lock_time);
+    void unlockCloud();
 
 
 //    std::vector<pcl::PointCloud<pcl::PointXYZRGB>> getCloud() { return camera_clouds; }
 
-
-    void setTransformationMatrix(Eigen::Matrix4d transform);
-    Eigen::Matrix4d getTransformationMatrix();
     void transformPointCloud();
     void transformPointCloud(Eigen::Matrix4d transform);
     pcl::PointCloud<pcl::PointXYZRGB> getTransformedCloud() { return transformed_cloud; }
@@ -54,17 +55,17 @@ public:
     void creteMesh(int kSearch);
 
     ~pclCloud();
+
 private:
 
     int id=0;
+
+    std::timed_mutex cloud_mutex;
+    std::shared_ptr<GlobalSettings> globalSettings = globalSettings->instance();
     std::vector<std::vector<pcl::PointCloud<pcl::PointXYZRGB>>> camera_clouds;
     std::vector<pcl::PointCloud<pcl::PointXYZRGB>> camera_merged_clouds;
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr merged_clouds_viewer = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
 
-    std::shared_ptr<GlobalSettings> globalSettings = globalSettings->instance();
-
-
-
-    Eigen::Matrix4d transform_matrix;
     //= pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
     pcl::PointCloud<pcl::PointXYZRGB> transformed_cloud ;//= pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
     pcl::PointCloud<pcl::Normal> normals_cloud ;//= pcl::PointCloud<pcl::Normal>::Ptr(new pcl::PointCloud<pcl::Normal>);

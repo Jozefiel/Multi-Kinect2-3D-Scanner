@@ -125,19 +125,6 @@ void Kinect::loadCamParams()
    transformation_matrix = transform_matrix;
 }
 
-bool Kinect::lockCloud(int lock_time)
-{
-    if(cloud_mutex.try_lock_for(std::chrono::milliseconds(lock_time)))
-        return true;
-    else
-        return false;
-}
-
-void Kinect::unlockCloud()
-{
-    cloud_mutex.unlock();
-}
-
 bool Kinect::lockFrames(int lock_time)
 {
     if(frame_mutex.try_lock_for(std::chrono::milliseconds(lock_time)))

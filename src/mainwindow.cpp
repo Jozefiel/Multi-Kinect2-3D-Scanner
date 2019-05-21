@@ -79,6 +79,9 @@ MainWindow::MainWindow(QWidget *parent) :QMainWindow(parent), ui(new Ui::MainWin
 //    viewer->addPointCloud(ethalon, "ethalon");
 //    viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "ethalon");
 //    ui->qvtkWidget->update ();
+
+    viewer->addPointCloud(Support[0]->getClouds()[0]->getMergedCloud(),"cloud");
+
 }
 
 MainWindow::~MainWindow()
@@ -90,14 +93,18 @@ MainWindow::~MainWindow()
 void MainWindow::onNewCloud()
 {
 
-    viewer->removePointCloud("cloud");
-    viewer->removePointCloud("normals");
-//    viewer->addPointCloud(Support[0]->getClouds()[0].getCloud()), "cloud");
+//    viewer->removePointCloud("cloud");
+//    viewer->removePointCloud("normals");
+//    viewer->addPointCloud(Support[0]->getClouds()[0]->getMergedCloud(),"cloud");
+    if(Support[0]->getClouds()[0]->getMergedCloud()!=nullptr && Support[0]->getClouds()[0]->getMergedCloud()->size()>0)
+    {
+        viewer->updatePointCloud(Support[0]->getClouds()[0]->getMergedCloud(),"cloud");
+        viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2 , "cloud");
+    }
 //    Support[0]->merged_cloud->computeNormals();
 
 //    viewer->addPointCloudNormals<pcl::PointXYZRGB, pcl::Normal>(Support[0]->merged_cloud->getCloud(),Support[0]->merged_cloud->getCloudNormals(),10,0.03, "normals");
 
-    viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2 , "cloud");
 
 
     ui->qvtkWidget->update();
@@ -105,35 +112,37 @@ void MainWindow::onNewCloud()
 
 void MainWindow::onNewRGBD(QPixmap newFrm,int i)
 {
-    rgbd[i].setPixmap(newFrm);
+    if(!newFrm.isNull() && !newFrm.size().isEmpty())
+        rgbd[i].setPixmap(newFrm);
 }
 
 void MainWindow::onNewDepth(QPixmap newFrm,int i)
 {
-
-    depth[i].setPixmap(newFrm);
+    if(!newFrm.isNull() && !newFrm.size().isEmpty())
+        depth[i].setPixmap(newFrm);
 }
 
 void MainWindow::onNewRangedRGBD(QPixmap newFrm,int i)
 {
-    if(!newFrm.isNull())
+    if(!newFrm.isNull() && !newFrm.size().isEmpty())
         ranged_rgbd[i].setPixmap(newFrm);
 }
 
 void MainWindow::onNewRangedDepth(QPixmap newFrm,int i)
 {
-    if(!newFrm.isNull())
+    if(!newFrm.isNull() && !newFrm.size().isEmpty())
         ranged_depth[i].setPixmap(newFrm);
 }
 
 void MainWindow::onNewIR(QPixmap newFrm,int i)
 {
-    ir[i].setPixmap(newFrm);
+    if(!newFrm.isNull() && !newFrm.size().isEmpty())
+        ir[i].setPixmap(newFrm);
 }
 
 void MainWindow::onNewHist(QPixmap newFrm,int i)
 {
-    if(!newFrm.isNull())
+    if(!newFrm.isNull() && !newFrm.size().isEmpty())
         histogram[i].setPixmap(newFrm);
 }
 

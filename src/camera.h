@@ -47,9 +47,6 @@ public:
     std::string             getSerial();
     std::string             getCamType();
 
-    virtual bool            lockCloud(int)  = 0;
-    virtual void            unlockCloud()   = 0;
-
     virtual bool            lockFrames(int) = 0;
     virtual void            unlockFrames()  = 0;
 
@@ -57,7 +54,7 @@ public:
     virtual void            stop() = 0;
 
     virtual void            frames(std::atomic<bool> & keep_running)    = 0;
-    virtual void            cloudData(std::atomic<bool> & keep_running, std::atomic<bool> & compute_cloud_style) = 0;
+//    virtual void            cloudData(std::atomic<bool> & keep_running, std::atomic<bool> & compute_cloud_style) = 0;
 
 
     virtual void            loadCamParams() = 0;

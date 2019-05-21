@@ -36,18 +36,19 @@ std::vector<Camera*> support::cameras()
 void support::threadsInit()
 {
     this->threadCameraSnapping();
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
     this->threadFrameUpdater();
 }
 
 void support::threadCameraSnapping()
 {
 
-    for (auto cam_threads_counter=0; cam_threads_counter<this->connectedCameras(); cam_threads_counter++)  //run threads with frames function, snapping RGB, Depth, Ir for Kinect
+    for (ulong cam_threads_counter=0; cam_threads_counter<this->connectedCameras(); cam_threads_counter++)  //run threads with frames function, snapping RGB, Depth, Ir for Kinect
     {
         cam_threads.push_back(std::thread(&Camera::frames,this->cameras()[cam_threads_counter],std::ref(snap_running)));
     }
 
-    for (auto cam_threads_counter=0; cam_threads_counter<this->connectedCameras(); cam_threads_counter++)     //detach threads
+    for (ulong cam_threads_counter=0; cam_threads_counter<this->connectedCameras(); cam_threads_counter++)     //detach threads
     {
         cam_threads[cam_threads_counter].detach();
     }
@@ -60,7 +61,7 @@ void support::threadFrameUpdater()
  //  viewer_threads.push_back(std::thread(&support::pclUpdater,this,std::ref(snap_running)));
     viewer_threads.push_back(std::thread(&support::frameUpdater,this,std::ref(snap_running)));
 
-    for (auto viewer_threads_counter=0; viewer_threads_counter<this->viewer_threads.size(); viewer_threads_counter++)     //detach threads
+    for (ulong viewer_threads_counter=0; viewer_threads_counter<this->viewer_threads.size(); viewer_threads_counter++)     //detach threads
     {
         viewer_threads[viewer_threads_counter].detach();
     }
@@ -68,7 +69,7 @@ void support::threadFrameUpdater()
 
 bool support::camera2framesDataTransfer()
 {
-    bool updater=false;
+    bool returner=false;
     for(unsigned long id=0;id<static_cast<unsigned long>(this->connectedCameras());id++)
     {
         if(connected_cams[id]->getFramesReleasedCheck())
@@ -97,39 +98,27 @@ bool support::camera2framesDataTransfer()
             if( static_cast<int>(cam_frames[0][id].size())>globalSettings.operator->()->getBufferSize())
             {
                 cam_frames[0][id].erase(cam_frames[0][id].begin());
-                updater=true;
+                returner=true;
             }
         }
     }
-    return updater;
+    return returner;
 }
 
 bool support::framesClouds2pclDataTransfer()
 {
-
-    std::chrono::system_clock::time_point then, now;
-    for(auto id=0; id< connected_cams.size();id++)
+    bool returner=false;
+    for(ulong id=0; id< connected_cams.size();id++)
     {
-        then=std::chrono::system_clock::now();
-
         if(this->cameras()[id]->lockFrames(5))
         {
             auto _cam_frames = cam_frames;
-
-            clouds[0].pclCopyCloud(_cam_frames->at(static_cast<ulong>(id)).back().cloud,id);
-   //         clouds[0].mergeClouds(id);
+            clouds[0]->pclCopyCloud(_cam_frames->at(id).back().cloud,static_cast<int>(id));
             this->cameras()[id]->unlockFrames();
-
+            returner=true;
         }
-        now=std::chrono::system_clock::now();
-        std::cout <<"Id: "<<id << " " <<std::chrono::duration_cast<std::chrono::milliseconds>(now - then).count() << " ms" << std::endl;
     }
-        try {
-//            if(clouds[0].mergeClouds(id))
-                return true;
-        } catch (...) {
-            return false;
-        }
+    return returner;
 }
 
 void support::closeThreads()

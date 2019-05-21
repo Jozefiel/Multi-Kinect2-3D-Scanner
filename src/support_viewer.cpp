@@ -47,27 +47,25 @@ void support::viewerUpdater()
     }  catch (...) { }
 }
 
-void support::pclUpdater(std::atomic<bool> &snap_running)
+void support::pclUpdater()
 {
-    while(snap_running)
-    {
-//        this->camera2cloudDataTransfer();   // store cloud to pcl objects
-        //merged_cloud->mergeClouds(this->mergeClouds(false));//! error when true, random fallings
-
-//        if(!merged_cloud->getCloud().empty())
-//            emit newCloud();
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
-    }
+        if(this->clouds[0]->mergeLastClouds())
+            std::cout<<"emited"<<std::endl;
+            emit newCloud();
 }
 
 void support::frameUpdater(std::atomic<bool> &snap_running)
 {
     while(snap_running)
     {
-        if(this->camera2framesDataTransfer() && cam_frames->at(0).size()>6)
+        if(this->camera2framesDataTransfer() && cam_frames->at(connectedCameras()-1).size()>globalSettings->getBufferSize()-1)
         {
             std::thread(&support::viewerUpdater,this).detach();
-            std::thread(&support::framesClouds2pclDataTransfer,this).detach();
+//            std::thread(&support::framesClouds2pclDataTransfer,this).detach();
+//            std::thread(&support::pclUpdater,this).detach();
+//            viewerUpdater();
+            framesClouds2pclDataTransfer();
+            pclUpdater();
         }  // store cloud to pcl objects
     }
 }

@@ -18,7 +18,7 @@ void support::changeComputeStyle(int state)
 
 void support::saveData()
 {
-    auto tmp_cam_frame=cam_frames;
+    auto tmp_cam_frame= *cam_frames;
 
     time_t acc_time = time(nullptr);
     std::tm* now = std::localtime(&acc_time);
@@ -26,13 +26,23 @@ void support::saveData()
     std::string path = "output/tmp/" + IntToStr(now->tm_year + 1900)+'_'+IntToStr(now->tm_mon + 1)+'_'+IntToStr(now->tm_mday)+'_'+IntToStr(now->tm_hour)+'_'+IntToStr(now->tm_min)+'_'+IntToStr(now->tm_sec);
     if(this->createDirectory(path))
     {
-        for(unsigned long i=0; i<tmp_cam_frame->size();i++)
+        for(unsigned long i=0; i<tmp_cam_frame.size();i++)
         {
-            for(unsigned long j=0; j<tmp_cam_frame->at(0).size();j++)
+            for(unsigned long j=0; j<tmp_cam_frame.at(0).size();j++)
             {
-                cv::imwrite(path + "/depth_" + IntToStr(i) + "_" + IntToStr(j) + ".hdr",tmp_cam_frame->at(i).at(j).rangedDepthMat);
-                cv::imwrite(path + "/rgbd" + IntToStr(i) + "_" + IntToStr(j) + ".jpeg",tmp_cam_frame->at(i).at(j).rangedRGBDMat);
-//                pcl::io::savePLYFileBinary(path + "/cloud" + IntToStr(i) + "_" + IntToStr(j) + ".ply" ,tmp_cam_frame->at(i).at(j).cloud);
+                try {
+                    tmp_cam_frame.at(i).at(j).cloud.width=tmp_cam_frame.at(i).at(j).cloud.size();
+                    cv::imwrite(path + "/depth_" + IntToStr(i) + "_" + IntToStr(j) + ".hdr",tmp_cam_frame.at(i).at(j).rangedDepthMat);
+                    cv::imwrite(path + "/rgbd" + IntToStr(i) + "_" + IntToStr(j) + ".jpeg",tmp_cam_frame.at(i).at(j).rangedRGBDMat);
+                    pcl::io::savePLYFileBinary(path + "/cloud" + IntToStr(i) + "_" + IntToStr(j) + ".ply" ,tmp_cam_frame.at(i).at(j).cloud);
+                    pcl::io::savePCDFileBinaryCompressed(path + "/cloud" + IntToStr(i) + "_" + IntToStr(j) + ".pcd" ,tmp_cam_frame.at(i).at(j).cloud);
+
+
+
+                } catch (...) {
+                    std::cout<<"Error during saving data"<<std::endl;
+                }
+
             }
         }
     }

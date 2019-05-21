@@ -12,62 +12,98 @@ bool pclCloud::pclCopyCloud(pcl::PointCloud<pcl::PointXYZRGB> cam_cloud, int cam
 {
     auto tmp_cloud=cam_cloud;
     ulong _camId= static_cast<ulong>(camId);
-    camera_clouds[static_cast<ulong>(camId)].emplace_back(tmp_cloud);
 
-    if( camera_clouds[static_cast<ulong>(camId)].size() > static_cast<ulong>(globalSettings.operator->()->getBufferSize()))
+    if(this->lockCloud(15))
     {
-        camera_clouds[_camId].erase(camera_clouds[_camId].begin());
+        camera_clouds[static_cast<ulong>(camId)].emplace_back(tmp_cloud);
+
+        if( camera_clouds[static_cast<ulong>(camId)].size() > static_cast<ulong>(globalSettings.operator->()->getBufferSize()))
+        {
+            camera_clouds[_camId].erase(camera_clouds[_camId].begin());
+        }
+        this->unlockCloud();
     }
 }
 
 bool pclCloud::mergeClouds(int camId)
 {
     try {
-        ulong _camId=static_cast<ulong>(camId);
-        pcl::PointCloud<pcl::PointXYZRGB> cloud ;
-        for(ulong i=0; i<camera_clouds[_camId].size();i++)
+        if(this->lockCloud(15))
         {
-            if(!camera_clouds[_camId].at(i).empty())
-                cloud+=camera_clouds[_camId].at(i);
+            ulong _camId=static_cast<ulong>(camId);
+            pcl::PointCloud<pcl::PointXYZRGB> cloud ;
+            for(ulong i=0; i<camera_clouds[_camId].size();i++)
+            {
+                if(!camera_clouds[_camId].at(i).empty())
+                    cloud+=camera_clouds[_camId].at(i);
+            }
+            this->unlockCloud();
+            std::cout<<"Merged cloud size: " << cloud.points.size()<<" , id: " << _camId <<std::endl;
         }
-        std::cout<<"Merged cloud size: " << cloud.points.size()<<" , id: " << _camId <<std::endl;
     } catch (...)
     {
         std::cout<<this->id<<" Problem with  pclCloud::mergeClouds"<<std::endl;
     }
 }
 
-pcl::PointCloud<pcl::PointXYZRGB> pclCloud::getMergedCloud()
+bool pclCloud::mergeAllClouds()
 {
+    try {
+        merged_clouds_viewer->clear();
+        for(ulong i=0; i<camera_clouds.size();i++)
+        {
+            for(ulong j=0; j<camera_clouds[i].size();j++)
+            {
+                if(!camera_clouds[i].at(j).empty())
+                {
+                    *merged_clouds_viewer+=camera_clouds[i].at(j);
+                }
+            }
+        }
+        std::cout<<"Merged cloud size: " << merged_clouds_viewer->points.size()<<std::endl;
+        return true;
+    } catch (...)
+    {
+        std::cout<<" Problem with  pclCloud::mergeClouds"<<std::endl;
+        return false;
+    }
+}
 
+pcl::PointCloud<pcl::PointXYZRGB>::Ptr pclCloud::getMergedCloud()
+{
+    try {
+
+            return merged_clouds_viewer;
+            this->unlockCloud();
+    } catch (...)
+    {
+        std::cout<<" Problem with pclCloud::getMergedCloud"<<std::endl;
+    }
 }
 
 
-
-void pclCloud::setTransformationMatrix(Eigen::Matrix4d transform)
+bool pclCloud::mergeLastClouds()
 {
-    transform_matrix (0,0) = transform (0,0);
-    transform_matrix (0,1) = transform (0,1);
-    transform_matrix (0,2) = transform (0,2);
-    transform_matrix (0,3) = transform (0,3);
-    transform_matrix (1,0) = transform (1,0);
-    transform_matrix (1,1) = transform (1,1);
-    transform_matrix (1,2) = transform (1,2);
-    transform_matrix (1,3) = transform (1,3);
-    transform_matrix (2,0) = transform (2,0);
-    transform_matrix (2,1) = transform (2,1);
-    transform_matrix (2,2) = transform (2,2);
-    transform_matrix (2,3) = transform (2,3);
-    transform_matrix (3,0) = transform (3,0);
-    transform_matrix (3,1) = transform (3,1);
-    transform_matrix (3,2) = transform (3,2);
-    transform_matrix (3,3) = transform (3,3);
+    try {
+        merged_clouds_viewer->clear();
+        for(ulong i=0; i<camera_clouds.size();i++)
+        {
+            if(camera_clouds.at(i).size()>0)
+            {
+                if(camera_clouds.at(i).back().size()>0)
+                {
+                    *merged_clouds_viewer+=camera_clouds.at(i).back();
+                }
+            }
+        }
+        std::cout<<"Merged cloud size: " << merged_clouds_viewer->points.size()<<std::endl;
+        return true;
+    } catch (...)
+    {
+        std::cout<<" Problem with pclCloud::getMergedCloud"<<std::endl;
+    }
 }
 
-Eigen::Matrix4d pclCloud::getTransformationMatrix()
-{
-    return transform_matrix;
-}
 
 void pclCloud::transformPointCloud()
 {
@@ -131,6 +167,19 @@ void pclCloud::creteMesh(int kSearch)
 //      normal_estimation.compute(*cloud_normals);
 //      pcl::io::savePCDFile("cloud_normals.pcd",*cloud_normals);
 //      pcl::io::savePLYFile("cloud_normals.ply",*cloud_normals);
+}
+
+bool pclCloud::lockCloud(int lock_time)
+{
+    if(cloud_mutex.try_lock_for(std::chrono::milliseconds(lock_time)))
+        return true;
+    else
+        return false;
+}
+
+void pclCloud::unlockCloud()
+{
+    cloud_mutex.unlock();
 }
 
 pclCloud::~pclCloud()

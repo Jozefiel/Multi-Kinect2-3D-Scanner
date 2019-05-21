@@ -66,7 +66,6 @@ public:
     void        registered2cloud(pcl::PointCloud<pcl::PointXYZRGB> &tmpCloud);
 
     bool        cloudData(bool);
-    void        cloudData(std::atomic<bool> & keep_running, std::atomic<bool> &compute_cloud_style); // kinect wrapper to pcl
     void        filterFrames();
     void        computeHist();
 
@@ -80,9 +79,6 @@ public:
 
     void loadCamParams();
 
-
-    bool lockCloud(int lock_time);
-    void unlockCloud();
     bool lockFrames(int lock_time);
     void unlockFrames();
 
@@ -111,7 +107,6 @@ private:
 
 
     std::timed_mutex frame_mutex;
-    std::timed_mutex cloud_mutex;
 
     libfreenect2::Freenect2Device::ColorCameraParams    rgb_calib_params;
     libfreenect2::Freenect2Device::IrCameraParams       ir_calib_params;

@@ -12,10 +12,13 @@ void support::cloudInit()
 //        this->clouds.push_back(pclCloud(this->cameras()[id]->getId(),this->cameras()[id]->getSerial()));
 //    }
     std::cout<<"support::cloudInit started"<<std::endl;
-    this->clouds.push_back(pclCloud(0,connectedCameras()));
+
+    std::shared_ptr<pclCloud> tmpCloud = std::make_shared<pclCloud>(0,connectedCameras());
+    this->clouds.emplace_back(tmpCloud);
+
 }
 
-std::vector<pclCloud> support::getClouds()
+std::vector<std::shared_ptr<pclCloud> > support::getClouds()
 {
     return clouds;
 }
@@ -24,7 +27,7 @@ void support::transformCloud()
 {
     for(ulong id=0;id<this->clouds.size();id++)
     {
-        this->clouds[id].transformPointCloud();
+        this->clouds[id]->transformPointCloud();
     }
     std::cout<<"support::transformCloud"<<std::endl;
 }
@@ -33,7 +36,7 @@ void support::transformCloud(std::vector<Eigen::Matrix4d> transform_matrix)
 {
     for(ulong id=0;id<this->clouds.size();id++)
     {
-        this->clouds[id].transformPointCloud(transform_matrix[id]);
+        this->clouds[id]->transformPointCloud(transform_matrix[id]);
     }
     std::cout<<"support::transformCloud"<<std::endl;
 }
@@ -45,7 +48,7 @@ pcl::PointCloud<pcl::PointXYZRGB> support::getCloudData(int id)
 
 pcl::PointCloud<pcl::PointXYZRGB> support::getTransformedCloudData(int id)
 {
-    return clouds[id].getTransformedCloud();
+    return clouds[id]->getTransformedCloud();
 }
 
 std::vector<pcl::PointCloud<pcl::PointXYZRGB>> support::mergeClouds(bool transformed)
@@ -58,7 +61,7 @@ std::vector<pcl::PointCloud<pcl::PointXYZRGB>> support::mergeClouds(bool transfo
         transformCloud();
         for(ulong id=0;id<this->clouds.size();id++)                                        // add connected kinects to vector cams
         {
-            temp_clouds.push_back(clouds[id].getTransformedCloud());
+            temp_clouds.push_back(clouds[id]->getTransformedCloud());
         }
     }
     else
@@ -81,7 +84,7 @@ std::vector<pcl::PointCloud<pcl::PointXYZRGB> > support::mergeClouds(bool transf
         transformCloud(transform_matrix);
         for(ulong id=0;id<this->clouds.size();id++)                                        // add connected kinects to vector cams
         {
-            temp_clouds.push_back(clouds[id].getTransformedCloud());
+            temp_clouds.push_back(clouds[id]->getTransformedCloud());
         }
     }
     else

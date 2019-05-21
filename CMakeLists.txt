@@ -51,7 +51,7 @@ add_executable(${PROJECT}  ${SRCS} ${UIS_HDRS})
 qt5_use_modules(${PROJECT_NAME} Widgets)
 
 
-target_link_libraries(${PROJECT} ${PCL_LIBRARIES} ${PCL_FILTERS_LIBRARIES} ${OpenCV_LIBRARIES} ${freenect2_LIBRARY} ${CMAKE_THREAD_LIBS_INIT} Qt5::Core Qt5::Widgets Qt5::Gui -lstdc++fs)
+target_link_libraries(${PROJECT} ${PCL_LIBRARIES} ${PCL_FILTERS_LIBRARIES} ${OpenCV_LIBRARIES} ${freenect2_LIBRARY} ${CMAKE_THREAD_LIBS_INIT} Qt5::Core Qt5::Widgets Qt5::Gui -lstdc++fs -pthread)
 
 #libfreenect cmake settings
 FIND_LIBRARY(freenect2_LIBRARY freenect2
