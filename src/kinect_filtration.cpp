@@ -14,6 +14,8 @@ void Kinect::filterFrames()
     new_cam_frames.rangedRGBDMat.release();
     new_cam_frames.mask.release();
 
+
+
     tmpMask->copyTo(new_cam_frames.mask);
     tmpDepthMat->copyTo(new_cam_frames.rangedDepthMat,new_cam_frames.mask);
     tmpRGBDMat->copyTo(new_cam_frames.rangedRGBDMat,new_cam_frames.mask);
@@ -21,8 +23,11 @@ void Kinect::filterFrames()
     tmpRGBDMat->convertTo(*tmpRGBDMat,CV_8UC4);
     cv::cvtColor(*tmpRGBDMat,*tmpRGBDMat,CV_RGB2RGBA);
 
+    cv::flip(new_cam_frames.rangedDepthMat,new_cam_frames.rangedDepthMat,+1);
+    cv::flip(new_cam_frames.rangedRGBDMat,new_cam_frames.rangedRGBDMat,+1);
+
     libfreenect_frames.undistortedDepth->data = new_cam_frames.rangedDepthMat.data;
-    libfreenect_frames.registered->data = tmpRGBDMat->data;
+    libfreenect_frames.registered->data = new_cam_frames.rangedRGBDMat.data;
 
 //    libfreenect_frames.registered->data         = new_cam_frames.rangedRGBDMat.data;
 
