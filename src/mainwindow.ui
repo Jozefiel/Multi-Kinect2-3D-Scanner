@@ -350,7 +350,7 @@
      <attribute name="title">
       <string>PCL-VIEWER</string>
      </attribute>
-     <widget class="QVTKWidget" name="qvtkWidget">
+     <widget class="QVTKWidget" name="qvtkWidget" native="true">
       <property name="geometry">
        <rect>
         <x>-110</x>

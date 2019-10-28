@@ -3,6 +3,10 @@
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/cudaimgproc.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include "globalsettings.h"
+
 #include <libfreenect2/libfreenect2.hpp>
 
 #include <boost/property_tree/ptree.hpp>
@@ -35,7 +39,7 @@ public:
 
         cv::Mat rangedDepthMat  =  cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_32FC1);
         cv::Mat rangedRGBDMat   =  cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_8UC4);
-        cv::Mat mask            =  cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_THRESH_BINARY);
+        cv::Mat mask            =  cv::Mat::zeros(ir_depth_height, ir_depth_width, cv::THRESH_BINARY);
         cv::Mat histMat         =  cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_8UC3);
 
         pcl::PointCloud<pcl::PointXYZRGB> cloud; //= pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
@@ -79,6 +83,7 @@ public:
     void resetFramesReleased() { new_frames_released=false; }
 
     virtual pcl::PointCloud<pcl::PointXYZRGB> getCloudData()   = 0;
+    std::shared_ptr<GlobalSettings> globalSettings = globalSettings->instance();
 
     Eigen::Matrix4d transformation_matrix;
     boost::property_tree::ptree pt;

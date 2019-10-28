@@ -27,8 +27,6 @@ void Kinect::frames(std::atomic<bool> & keep_running)
 
                     new_frames_released=true;
 
-//                    cloneFrames();
-
                     cam_frames = new_cam_frames;
 
 //                    now=std::chrono::system_clock::now();
@@ -126,32 +124,10 @@ void Kinect::registered2cloud(pcl::PointCloud<pcl::PointXYZRGB> &tmpCloud)
                 point.b=b;
                 tmpCloud.points.push_back(point);
             }
-
-
-//            if(std::isinf(x) || std::isinf(y) ||  std::isinf(z) )
-//            {
-//                x=NAN;
-//                z=NAN;
-//                y=NAN;
-//            }
-//            else if ( z > static_cast<float>(maximal_depth) )
-//            {
-//                x=NAN;
-//                z=NAN;
-//                y=NAN;
-//            }
-
-//            tmpCloud.points[n].x=x;
-//            tmpCloud.points[n].y=y;
-//            tmpCloud.points[n].z=z;
-//            tmpCloud.points[n].r=r;
-//            tmpCloud.points[n].g=g;
-//            tmpCloud.points[n].b=b;
-
             n++;
         }
     }
-//    std::vector<int> removedPoints;
-//    pcl::removeNaNFromPointCloud(tmpCloud,tmpCloud,removedPoints);
+    std::vector<int> removedPoints;
+    pcl::removeNaNFromPointCloud(tmpCloud,tmpCloud,removedPoints);
     tmpCloud.resize(tmpCloud.points.size());
 }

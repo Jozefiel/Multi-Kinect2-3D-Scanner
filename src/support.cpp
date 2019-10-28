@@ -32,13 +32,19 @@ void support::saveData()
             {
                 try {
                     tmp_cam_frame.at(i).at(j).cloud.width=tmp_cam_frame.at(i).at(j).cloud.size();
-                    cv::imwrite(path + "/depth_" + IntToStr(i) + "_" + IntToStr(j) + ".hdr",tmp_cam_frame.at(i).at(j).rangedDepthMat);
-                    cv::imwrite(path + "/rgbd" + IntToStr(i) + "_" + IntToStr(j) + ".jpeg",tmp_cam_frame.at(i).at(j).rangedRGBDMat);
+                    cv::Mat tmp;
+                    cv::normalize(tmp_cam_frame.at(i).at(j).depthMat, tmp, 0, 255,cv::NORM_MINMAX);
+//                    cv::imwrite(path + "/depth_" + IntToStr(i) + "_" + IntToStr(j) + ".png",tmp);
+//                    cv::Mat tmp1;
+//                    cv::normalize(tmp_cam_frame.at(i).at(j).rangedDepthMat, tmp1, 0, 255,cv::NORM_MINMAX);
+//                    cv::imwrite(path + "/rdepth_" + IntToStr(i) + "_" + IntToStr(j) + ".png",tmp1);
+//                    cv::imwrite(path + "/rgbd" + IntToStr(i) + "_" + IntToStr(j) + ".jpeg",tmp_cam_frame.at(i).at(j).rangedRGBDMat);
                     pcl::io::savePLYFileBinary(path + "/cloud" + IntToStr(i) + "_" + IntToStr(j) + ".ply" ,tmp_cam_frame.at(i).at(j).cloud);
                     pcl::io::savePCDFileBinaryCompressed(path + "/cloud" + IntToStr(i) + "_" + IntToStr(j) + ".pcd" ,tmp_cam_frame.at(i).at(j).cloud);
 
-
-
+                    if(i==0){
+                        this->saveLUT(tmp_cam_frame.at(i).at(j).rangedDepthMat,tmp_cam_frame.at(i).at(j).rangedRGBDMat,tmp_cam_frame.at(i).at(j).irMat,tmp_cam_frame.at(i).at(j).colorMat,"kinect",j);
+                    }
                 } catch (...) {
                     std::cout<<"Error during saving data"<<std::endl;
                 }
@@ -65,13 +71,18 @@ bool support::createDirectory(std::string path)
 }
 
 
-void support::saveLUT(cv::Mat depth, cv::Mat rgbd, std::string filename,int counter)
+void support::saveLUT(cv::Mat depth, cv::Mat rgbd, cv::Mat ir, cv::Mat rgb, std::string filename,int counter)
 {
 #define ir_depth_width 512
 #define ir_depth_height 424
     int i,j;
 
-    cv::imwrite("test/"+filename+"_"+IntToStr(counter)+".jpeg",rgbd);
+    cv::imwrite("test/"+filename+"_"+IntToStr(counter)+".png",rgbd);
+
+    cv::Mat tmp1;
+    cv::normalize(ir, tmp1, 0, 255,cv::NORM_MINMAX);
+    cv::imwrite("test/"+filename+"ir_"+IntToStr(counter)+".png",tmp1);
+    cv::imwrite("test/"+filename+"rgb_"+IntToStr(counter)+".png",rgb);
 
     ofstream myfile;
     myfile.open("test/"+filename+"_"+IntToStr(counter)+".txt");

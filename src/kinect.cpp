@@ -32,7 +32,7 @@ Kinect::Kinect(libfreenect2::Freenect2 * _freenect,int _id)
 
         this->loadCamParams();
 
-//        this->pDev->setIrCameraParams(ir_calib_params);
+        this->pDev->setIrCameraParams(ir_calib_params);
 //        this->pDev->setColorCameraParams(rgb_calib_params);
         this->registration();
 

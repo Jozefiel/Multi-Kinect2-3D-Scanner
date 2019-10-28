@@ -96,9 +96,11 @@ void MainWindow::onNewCloud()
 //    viewer->removePointCloud("cloud");
 //    viewer->removePointCloud("normals");
 //    viewer->addPointCloud(Support[0]->getClouds()[0]->getMergedCloud(),"cloud");
+    
     if(Support[0]->getClouds()[0]->getMergedCloud()!=nullptr && Support[0]->getClouds()[0]->getMergedCloud()->size()>0)
     {
-        viewer->updatePointCloud(Support[0]->getClouds()[0]->getMergedCloud(),"cloud");
+        cloud = Support[0]->getClouds()[0]->getMergedCloud();
+        viewer->updatePointCloud(cloud,"cloud");
         viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2 , "cloud");
     }
 //    Support[0]->merged_cloud->computeNormals();
@@ -172,7 +174,7 @@ void MainWindow::on_checkBox_stateChanged(int arg1)
 void MainWindow::on_save_all_button_clicked()
 {
 
-    Support[0]->saveData();
+    Support[0]->saveData();   
 
 }
 

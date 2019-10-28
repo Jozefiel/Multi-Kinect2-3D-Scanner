@@ -1,11 +1,11 @@
 #include "camera.h"
 #include "kinect.h"
-
 void Kinect::filterFrames()
 {
-    cv::Mat *tmpDepthMat = new cv::Mat(new_cam_frames.depthMat);
-    cv::Mat *tmpRGBDMat  = new cv::Mat(new_cam_frames.rgbdMat);
-    cv::Mat *tmpMask     = new cv::Mat(cv::Mat::zeros(ir_depth_height, ir_depth_width, CV_THRESH_BINARY));
+
+    auto tmpDepthMat = std::make_shared<cv::Mat>(new_cam_frames.depthMat);
+    auto tmpRGBDMat  = std::make_shared<cv::Mat>(new_cam_frames.rgbdMat);
+    auto tmpMask     = std::make_shared<cv::Mat>(cv::Mat::zeros(ir_depth_height, ir_depth_width, cv::THRESH_BINARY));
 
     rangeFrames(*tmpDepthMat, *tmpRGBDMat,*tmpMask);
     morphFrames(*tmpDepthMat, *tmpRGBDMat,*tmpMask);
@@ -14,14 +14,12 @@ void Kinect::filterFrames()
     new_cam_frames.rangedRGBDMat.release();
     new_cam_frames.mask.release();
 
-
-
     tmpMask->copyTo(new_cam_frames.mask);
     tmpDepthMat->copyTo(new_cam_frames.rangedDepthMat,new_cam_frames.mask);
     tmpRGBDMat->copyTo(new_cam_frames.rangedRGBDMat,new_cam_frames.mask);
 
     tmpRGBDMat->convertTo(*tmpRGBDMat,CV_8UC4);
-    cv::cvtColor(*tmpRGBDMat,*tmpRGBDMat,CV_RGB2RGBA);
+    cv::cvtColor(*tmpRGBDMat,*tmpRGBDMat,cv::COLOR_RGB2RGBA);
 
     cv::flip(new_cam_frames.rangedDepthMat,new_cam_frames.rangedDepthMat,+1);
     cv::flip(new_cam_frames.rangedRGBDMat,new_cam_frames.rangedRGBDMat,+1);
@@ -29,14 +27,11 @@ void Kinect::filterFrames()
     libfreenect_frames.undistortedDepth->data = new_cam_frames.rangedDepthMat.data;
     libfreenect_frames.registered->data = new_cam_frames.rangedRGBDMat.data;
 
-//    libfreenect_frames.registered->data         = new_cam_frames.rangedRGBDMat.data;
+    libfreenect_frames.registered->data         = new_cam_frames.rangedRGBDMat.data;
 
-    tmpDepthMat->release();
-    tmpRGBDMat->release();
-    tmpMask->release();
-    delete tmpDepthMat;
-    delete tmpRGBDMat;
-    delete tmpMask;
+//    tmpDepthMat->release();
+//    tmpRGBDMat->release();
+//    tmpMask->release();
 
 }
 

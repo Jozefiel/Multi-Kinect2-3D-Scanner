@@ -18,10 +18,11 @@ set(CMAKE_AUTOUIC ON)
 
 #find requirements
 find_package(PCL 1.9 REQUIRED )
-find_package(OpenCV REQUIRED )
+find_package(OpenCV 4 REQUIRED )
 find_package(freenect2 REQUIRED )
-find_package(VTK 9 REQUIRED )
+find_package(VTK 6.3 REQUIRED )
 find_package(Threads REQUIRED)
+find_package( realsense2 REQUIRED)
 
 find_package(Qt5Widgets REQUIRED)
 find_package(Qt5Gui REQUIRED)
@@ -51,7 +52,7 @@ add_executable(${PROJECT}  ${SRCS} ${UIS_HDRS})
 qt5_use_modules(${PROJECT_NAME} Widgets)
 
 
-target_link_libraries(${PROJECT} ${PCL_LIBRARIES} ${PCL_FILTERS_LIBRARIES} ${OpenCV_LIBRARIES} ${freenect2_LIBRARY} ${CMAKE_THREAD_LIBS_INIT} Qt5::Core Qt5::Widgets Qt5::Gui -lstdc++fs -pthread)
+target_link_libraries(${PROJECT} ${PCL_LIBRARIES} ${PCL_FILTERS_LIBRARIES} ${OpenCV_LIBRARIES} ${freenect2_LIBRARY} ${realsense2_LIBRARY} ${CMAKE_THREAD_LIBS_INIT} Qt5::Core Qt5::Widgets Qt5::Gui -lstdc++fs -pthread)
 
 #libfreenect cmake settings
 FIND_LIBRARY(freenect2_LIBRARY freenect2

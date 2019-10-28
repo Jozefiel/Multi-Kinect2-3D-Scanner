@@ -14,8 +14,8 @@ std::string  Camera::getCamType()  { return camera_type;}
 void Camera::rangeFrames(cv::Mat  tmpDepthMat, cv::Mat  tmpRGBDMat, cv::Mat  tmpMask)
 {
     tmpRGBDMat.convertTo(tmpRGBDMat,CV_8UC3);
-    cv::cvtColor(tmpRGBDMat,tmpRGBDMat,CV_RGBA2RGB);
-    cv::inRange(tmpDepthMat,80,800,tmpMask);
+    cv::cvtColor(tmpRGBDMat,tmpRGBDMat,cv::COLOR_RGBA2RGB);
+    cv::inRange(tmpDepthMat,globalSettings.operator->()->getMinDepth(),globalSettings.operator->()->getMaxDepth(),tmpMask);
 }
 
 void Camera::morphFrames(cv::Mat & tmpDepthMat, cv::Mat &tmpRGBDMat, cv::Mat &tmpMask)

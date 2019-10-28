@@ -21,9 +21,10 @@
 #include <pcl/io/ply_io.h>
 #include <pcl/io/vtk_io.h>
 #include <pcl/features/normal_3d.h>
-#include <vtkRenderWindow.h>
 #include <pcl/point_types.h>
-
+#include <pcl/point_cloud.h>
+#include <pcl/common/common.h>
+#include <vtkRenderWindow.h>
 
 #include "camera.h"
 #include "kinect.h"
@@ -70,7 +71,7 @@ private slots:
 protected:
     std::vector<support*> Support;
     QGraphicsPixmapItem rgbd[4],depth[4],ir[4],ranged_rgbd[4],ranged_depth[4],histogram[4];
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
+    pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud;
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr ethalon = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
     pcl::visualization::PCLVisualizer  * viewer=nullptr;
 private:

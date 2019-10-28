@@ -3,6 +3,7 @@
 
 #include "camera.h"
 #include "kinect.h"
+#include "
 #include "pcl.h"
 #include "globalsettings.h"
 
@@ -65,7 +66,7 @@ public:
 
 
     void changeComputeStyle(int);
-    void saveLUT(cv::Mat depth, cv::Mat rgbd, std::string filename, int counter);
+    void saveLUT(cv::Mat depth, cv::Mat rgbd, cv::Mat ir, cv::Mat rgb, std::string filename, int counter);
     std::atomic<bool> snap_running {true};
     pcl::PointCloud<pcl::PointXYZRGB> cloudik;
     void saveSequence();

@@ -7,6 +7,7 @@ void support::cameraInit()
     this->realsenseInit();
 
     cam_frames = new std::vector<std::vector<Camera::camera_frames>>(connected_cams.size());
+
 }
 
 void support::kinectInit()
@@ -57,11 +58,11 @@ void support::threadCameraSnapping()
 
 void support::threadFrameUpdater()
 {
- //   viewer_threads.push_back(std::thread(&support::viewerUpdater,this,std::ref(snap_running)));
- //  viewer_threads.push_back(std::thread(&support::pclUpdater,this,std::ref(snap_running)));
+   // viewer_threads.push_back(std::thread(&support::viewerUpdater,this,std::ref(snap_running)));
+   //viewer_threads.push_back(std::thread(&support::pclUpdater,this,std::ref(snap_running)));
     viewer_threads.push_back(std::thread(&support::frameUpdater,this,std::ref(snap_running)));
 
-    for (ulong viewer_threads_counter=0; viewer_threads_counter<this->viewer_threads.size(); viewer_threads_counter++)     //detach threads
+    for (ulong viewer_threads_counter=0; viewer_threads_counter < this->viewer_threads.size(); viewer_threads_counter++)     //detach threads
     {
         viewer_threads[viewer_threads_counter].detach();
     }
@@ -70,7 +71,7 @@ void support::threadFrameUpdater()
 bool support::camera2framesDataTransfer()
 {
     bool returner=false;
-    for(unsigned long id=0;id<static_cast<unsigned long>(this->connectedCameras());id++)
+    for(unsigned long id=0;id<this->connectedCameras();id++)
     {
         if(connected_cams[id]->getFramesReleasedCheck())
         {
@@ -113,7 +114,8 @@ bool support::framesClouds2pclDataTransfer()
         if(this->cameras()[id]->lockFrames(5))
         {
             auto _cam_frames = cam_frames;
-            clouds[0]->pclCopyCloud(_cam_frames->at(id).back().cloud,static_cast<int>(id));
+            if(!_cam_frames->at(id).empty())
+                clouds[0]->pclCopyCloud(_cam_frames->at(id).back().cloud,static_cast<int>(id));
             this->cameras()[id]->unlockFrames();
             returner=true;
         }

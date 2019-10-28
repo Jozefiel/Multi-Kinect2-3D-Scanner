@@ -12,7 +12,7 @@
 #include <chrono>
 #include <thread>
 #include <fstream>
-
+#include <memory>
 
 #include <libfreenect2/libfreenect2.hpp>
 #include <libfreenect2/frame_listener_impl.h>
@@ -88,7 +88,7 @@ public:
 
 private:
 
-    libfreenect2::PacketPipeline * pPipeline            = new libfreenect2::OpenGLPacketPipeline();
+    libfreenect2::PacketPipeline * pPipeline            = new libfreenect2::CudaKdePacketPipeline();
     libfreenect2::Freenect2 * pFreenect                 = nullptr;
     libfreenect2::Freenect2Device * pDev                = nullptr;
     libfreenect2::Registration * pRegistrated           = nullptr;
