@@ -13,9 +13,6 @@
 ## About
 
 3D scanner software is based on  for Kinect for Windows v2 (K4W2) devices (release and developer preview).
-DOI: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.50641.svg)](https://doi.org/10.5281/zenodo.50641)
-
-If you use the KDE depth unwrapping algorithm implemented in the library, please also cite this ECCV 2016 [paper](http://users.isy.liu.se/cvl/perfo/abstracts/jaremo16.html).
 
 This software supports:
 * Multiple RGBD image processing
@@ -26,9 +23,9 @@ This software supports:
 Software
   *Linux
     *Libfreenect2
-    *OpenCV 3.4.2
-    *PCL
-    *VTK
+    *OpenCV 3.4.0
+    *PCL 1.10.0
+    *VTK 
 Hardware
   *PC with USB 3.0 controllers
     *each Kinect v2 require own usb 3.0 expansion card
