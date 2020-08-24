@@ -1,3 +1,0 @@
-/home/jozef/Documents/QT/3DScan/CMakeFiles/edit_cache.dir
-/home/jozef/Documents/QT/3DScan/CMakeFiles/test3.dir
-/home/jozef/Documents/QT/3DScan/CMakeFiles/rebuild_cache.dir
