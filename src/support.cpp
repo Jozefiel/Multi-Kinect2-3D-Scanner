@@ -1,193 +1,102 @@
 #include "support.h"
 
-support::support()
+support::support(QObject *parent) : QObject(parent)
 {
-
-
 
 }
 
-//CAMERA_SUPPORT
-void support::cameraInit()
+//support
+
+void support::changeComputeStyle(int state)
 {
-    this->kinectInit();
-    this->realsenseInit();
+    if(state==0)
+        compute_cloud_style=false;
+    else
+        compute_cloud_style=true;
+
 }
 
-void support::kinectInit()
+void support::saveData()
 {
-    libfreenect2::setGlobalLogger(nullptr);
-    libfreenect2::Freenect2 * pFreenect2 = new libfreenect2::Freenect2;             // freenect2 init
-    int connected_kinects = pFreenect2->enumerateDevices();                         // number of connected kinects
-    for(auto id=0;id<connected_kinects;id++)                                        // add connected kinects to vector cams
+    auto tmp_cam_frame= *cam_frames;
+
+    time_t acc_time = time(nullptr);
+    std::tm* now = std::localtime(&acc_time);
+
+    std::string path = "output/tmp/" + IntToStr(now->tm_year + 1900)+'_'+IntToStr(now->tm_mon + 1)+'_'+IntToStr(now->tm_mday)+'_'+IntToStr(now->tm_hour)+'_'+IntToStr(now->tm_min)+'_'+IntToStr(now->tm_sec);
+    if(this->createDirectory(path))
     {
-        connected_cams.push_back(Camera::create_camera(pFreenect2, id));
-    }
-    std::cout<<"support::kinectInit started"<<std::endl;
-
-}
-
-void support::realsenseInit()
-{
-
-    std::cout<<"support::realsenseInit started"<<std::endl;
-}
-
-std::vector<Camera*> support::cameras()
-{
-    return connected_cams;
-}
-
-
-int support::connectedCameras()
-{
- return static_cast<int>(connected_cams.size());
-}
-
-
-//THREADS
-
-
-void support::threadsInit()
-{
-    this->threadCameraSnapping();
-    this->threadComputePointCloud();
-}
-
-void support::threadCameraSnapping()
-{
-
-    for (auto cam_threads_counter=0; cam_threads_counter<this->connectedCameras(); cam_threads_counter++)  //run threads with frames function, snapping RGB, Depth, Ir for Kinect
-    {
-        cam_threads.push_back(std::thread(&Camera::frames,this->cameras()[cam_threads_counter],std::ref(snap_running)));
-    }
-
-    for (auto cam_threads_counter=0; cam_threads_counter<this->connectedCameras(); cam_threads_counter++)     //detach threads
-    {
-        cam_threads[cam_threads_counter].detach();
-    }
-    std::cout<<"support::threadCameraSnapping started"<<std::endl;
-}
-
-void support::threadComputePointCloud()
-{
-    for (auto cloud_threads_counter=0; cloud_threads_counter<this->connectedCameras(); cloud_threads_counter++)  //run threads with frames function, snapping RGB, Depth, Ir for Kinect
-    {
-        cloud_threads.push_back(std::thread(&Camera::cloudData,this->cameras()[cloud_threads_counter],std::ref(snap_running),std::ref(compute_cloud_style)));
-    }
-
-    for (auto cloud_threads_counter=0; cloud_threads_counter<this->connectedCameras(); cloud_threads_counter++)     //detach threads
-    {
-        cloud_threads[cloud_threads_counter].detach();
-    }
-    std::cout<<"support::threadComputePointCloud started"<<std::endl;
-}
-
-//CLOUD
-
-void support::cloudInit()
-{
-    for(auto id=0;id<this->connectedCameras();id++)                                        // add connected kinects to vector cams
-    {
-        this->clouds.push_back(pclCloud(this->cameras()[id]->getId(),this->cameras()[id]->getSerial()));
-    }
-    std::cout<<"support::cloudInit started"<<std::endl;
-
-}
-
-std::vector<pclCloud> support::getClouds()
-{
-    return clouds;
-}
-
-
-void support::camera2cloudDataTransfer()
-{
-    for(auto id=0;id<this->connectedCameras();id++)
-    {
-        if(connected_cams[id]->lockCloud(mutexTimeDelay))
+        for(unsigned long i=0; i<tmp_cam_frame.size();i++)
         {
-            clouds[id].pclCopyCloud(connected_cams[id]->getCloudData());
-            connected_cams[id]->unlockCloud();
-        } else
-            std::cout<<"support::camera2cloudDataTransfer error: cloud was not transfered"<<std::endl;
-    }
-}
+            for(unsigned long j=0; j<tmp_cam_frame.at(0).size();j++)
+            {
+                try {
+                    tmp_cam_frame.at(i).at(j).cloud.width=tmp_cam_frame.at(i).at(j).cloud.size();
+                    cv::Mat tmp;
+                    cv::normalize(tmp_cam_frame.at(i).at(j).depthMat, tmp, 0, 255,cv::NORM_MINMAX);
+//                    cv::imwrite(path + "/depth_" + IntToStr(i) + "_" + IntToStr(j) + ".png",tmp);
+//                    cv::Mat tmp1;
+//                    cv::normalize(tmp_cam_frame.at(i).at(j).rangedDepthMat, tmp1, 0, 255,cv::NORM_MINMAX);
+//                    cv::imwrite(path + "/rdepth_" + IntToStr(i) + "_" + IntToStr(j) + ".png",tmp1);
+//                    cv::imwrite(path + "/rgbd" + IntToStr(i) + "_" + IntToStr(j) + ".jpeg",tmp_cam_frame.at(i).at(j).rangedRGBDMat);
+                    pcl::io::savePLYFileBinary(path + "/cloud" + IntToStr(i) + "_" + IntToStr(j) + ".ply" ,tmp_cam_frame.at(i).at(j).cloud);
+                    pcl::io::savePCDFileBinaryCompressed(path + "/cloud" + IntToStr(i) + "_" + IntToStr(j) + ".pcd" ,tmp_cam_frame.at(i).at(j).cloud);
 
-void support::transformCloud()
-{
-    for(auto id=0;id<this->connectedCameras();id++)
-    {
-        this->clouds[id].transformPointCloud();
-    }
-    std::cout<<"support::transformCloud"<<std::endl;
-}
+                    if(i==0){
+                        this->saveLUT(tmp_cam_frame.at(i).at(j).rangedDepthMat,tmp_cam_frame.at(i).at(j).rangedRGBDMat,tmp_cam_frame.at(i).at(j).irMat,tmp_cam_frame.at(i).at(j).colorMat,"kinect",j);
+                    }
+                } catch (...) {
+                    std::cout<<"Error during saving data"<<std::endl;
+                }
 
-void support::transformCloud(std::vector<Eigen::Matrix4d> transform_matrix)
-{
-    for(auto id=0;id<this->connectedCameras();id++)
-    {
-        this->clouds[id].transformPointCloud(transform_matrix[id]);
-    }
-    std::cout<<"support::transformCloud"<<std::endl;
-}
-
-pcl::PointCloud<pcl::PointXYZRGB>::Ptr support::getCloudData(int id)
-{
-    return clouds[id].getCloud();
-}
-
-pcl::PointCloud<pcl::PointXYZRGB>::Ptr support::getTransformedCloudData(int id)
-{
-    return clouds[id].getTransformedCloud();
-}
-
-std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> support::mergeClouds(bool transformed)
-{
-//    merged_clouds.clear();
-    std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> temp_clouds;
-
-    if(transformed)
-    {
-        transformCloud();
-        for(auto id=0;id<this->connectedCameras();id++)                                        // add connected kinects to vector cams
-        {
-            temp_clouds.push_back(clouds[id].getTransformedCloud());
+            }
         }
+    }
+}
+
+
+bool support::createDirectory(std::string path)
+{
+    fs::file_status s = fs::file_status{};
+
+    if(fs::status_known(s) ? fs::exists(s) : fs::exists(path))
+    {
+        return false;
     }
     else
     {
-        for(auto id=0;id<this->connectedCameras();id++)                                        // add connected kinects to vector cams
-        {
-            temp_clouds.push_back(clouds[id].getCloud());
-        }
+        fs::create_directories(path);
+        return true;
     }
-//    std::cout<<"support::mergeClouds"<<std::endl;
-    return temp_clouds;
 }
 
-std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> support::mergeClouds(bool transformed, std::vector<Eigen::Matrix4d> transform_matrix)
+
+void support::saveLUT(cv::Mat depth, cv::Mat rgbd, cv::Mat ir, cv::Mat rgb, std::string filename,int counter)
 {
-//    merged_clouds.clear();
-    std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> temp_clouds;
+#define ir_depth_width 512
+#define ir_depth_height 424
+    int i,j;
 
-    if(transformed)
+    cv::imwrite("test/"+filename+"_"+IntToStr(counter)+".png",rgbd);
+
+    cv::Mat tmp1;
+    cv::normalize(ir, tmp1, 0, 255,cv::NORM_MINMAX);
+    cv::imwrite("test/"+filename+"ir_"+IntToStr(counter)+".png",tmp1);
+    cv::imwrite("test/"+filename+"rgb_"+IntToStr(counter)+".png",rgb);
+
+    ofstream myfile;
+    myfile.open("test/"+filename+"_"+IntToStr(counter)+".txt");
+
+    for(i = 0; i < depth.cols; i++)
     {
-        transformCloud(transform_matrix);
-        for(auto id=0;id<this->connectedCameras();id++)                                        // add connected kinects to vector cams
+        for(j = 0; j < depth.rows; j++)
         {
-            temp_clouds.push_back(clouds[id].getTransformedCloud());
+            double orig = depth.at<float>(j,i);
+            myfile<<orig<<"\n";
+
         }
     }
-    else
-    {
-        for(auto id=0;id<this->connectedCameras();id++)                                        // add connected kinects to vector cams
-        {
-            temp_clouds.push_back(clouds[id].getCloud());
-        }
-    }
-//    std::cout<<"support::mergeClouds"<<std::endl;
-    return temp_clouds;
+
+    myfile.close();
+
 }
-
-
